@@ -205,27 +205,26 @@ if __name__ == "__main__":
     except Exception:
         pass
 
-    def is_port_busy(port=8000):
+    def is_port_in_use(port=8000):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            return s.connect_ex(('127.0.0.1', port)) == 0
+            try:
+                s.bind(('127.0.0.1', port))
+                return False
+            except OSError:
+                return True
 
     ico_path = os.path.join(BASE_DIR, "NosClean.ico")
     if not os.path.exists(ico_path):
         ico_path = os.path.join(STATIC_DIR, "favicon.ico")
 
-    # Iniciar servidor backend FastAPI en segundo plano si no está corriendo
-    server_running = is_port_busy(8000)
+    # Iniciar servidor backend FastAPI en hilo ultra-rápido si no está corriendo
+    server_running = is_port_in_use(8000)
     if not server_running:
         server_thread = threading.Thread(
             target=lambda: uvicorn.run(app, host="127.0.0.1", port=8000, log_level="warning"),
             daemon=True
         )
         server_thread.start()
-        # Esperar hasta que responda
-        for _ in range(30):
-            time.sleep(0.1)
-            if is_port_busy(8000):
-                break
 
     # Lanzar la aplicación en ventana de escritorio nativa WebView2 (icono verde propio, cero Edge)
     try:
