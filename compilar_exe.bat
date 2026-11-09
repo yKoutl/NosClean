@@ -21,19 +21,16 @@ python -m PyInstaller ^
     --name="NosClean" ^
     --collect-all="webview" ^
     --collect-all="pythonnet" ^
+    --collect-all="uvicorn" ^
+    --collect-all="anyio" ^
+    --collect-all="h11" ^
     --hidden-import="webview" ^
     --hidden-import="clr" ^
     --hidden-import="win32com.client" ^
     --hidden-import="uvicorn.logging" ^
-    --hidden-import="uvicorn.loops" ^
-    --hidden-import="uvicorn.loops.auto" ^
-    --hidden-import="uvicorn.protocols" ^
-    --hidden-import="uvicorn.protocols.http" ^
-    --hidden-import="uvicorn.protocols.http.auto" ^
-    --hidden-import="uvicorn.protocols.websockets" ^
-    --hidden-import="uvicorn.protocols.websockets.auto" ^
-    --hidden-import="uvicorn.lifespan" ^
-    --hidden-import="uvicorn.lifespan.on" ^
+    --hidden-import="uvicorn.loops.asyncio" ^
+    --hidden-import="uvicorn.protocols.http.h11_impl" ^
+    --hidden-import="uvicorn.lifespan.off" ^
     main.py
 
 if %ERRORLEVEL% NEQ 0 (
