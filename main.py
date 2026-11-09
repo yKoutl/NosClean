@@ -1,5 +1,12 @@
 import os
 import sys
+
+# Blindaje para PyInstaller modo ventana (--noconsole) donde sys.stdout y sys.stderr son None
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, "w")
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, "w")
+
 import uvicorn
 from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.staticfiles import StaticFiles
@@ -172,9 +179,10 @@ def api_action_create_shortcut(req: ShortcutRequest):
         raise HTTPException(status_code=400, detail=msg)
     return {"success": True, "message": msg, "data": data}
 
-def launch_browser(url: str = "http://127.0.0.1:8000"):
+def launch_browser():
     import time, subprocess
-    time.sleep(0.5)
+    time.sleep(0.7)
+    url = "http://127.0.0.1:8000"
     edge_paths = [
         r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
         r"C:\Program Files\Microsoft\Edge\Application\msedge.exe"
@@ -194,20 +202,6 @@ def launch_browser(url: str = "http://127.0.0.1:8000"):
     import webbrowser
     webbrowser.open(url)
 
-def find_available_port(start_port: int = 8000) -> int:
-    """Encuentra un puerto libre de forma dinámica para evitar conflictos en cualquier PC."""
-    import socket
-    for p in range(start_port, start_port + 25):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            try:
-                s.bind(('127.0.0.1', p))
-                return p
-            except OSError:
-                continue
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(('127.0.0.1', 0))
-        return s.getsockname()[1]
-
 if __name__ == "__main__":
     import multiprocessing
     multiprocessing.freeze_support()
@@ -221,52 +215,59 @@ if __name__ == "__main__":
     except Exception:
         pass
 
-    # Encontrar puerto libre garantizado (evita colisiones con otros programas o bloqueos de Windows)
-    server_port = find_available_port(8000)
-    app_url = f"http://127.0.0.1:{server_port}"
-
-    def run_server():
-        try:
-            config = uvicorn.Config(
-                app=app,
-                host="127.0.0.1",
-                port=server_port,
-                loop="asyncio",
-                http="h11",
-                lifespan="off",
-                log_level="warning"
-            )
-            server = uvicorn.Server(config)
-            server.run()
-        except Exception as e:
-            log_path = os.path.join(os.environ.get("TEMP", "."), "nosclean_error.log")
-            try:
-                with open(log_path, "a", encoding="utf-8") as f:
-                    f.write(f"Server error: {e}\n")
-            except Exception:
-                pass
-
-    server_thread = threading.Thread(target=run_server, daemon=True)
-    server_thread.start()
-
-    # Esperar hasta que uvicorn esté listo para responder peticiones
-    for _ in range(60):
-        time.sleep(0.05)
+    def is_port_in_use(port=8000):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(0.05)
-            if s.connect_ex(('127.0.0.1', server_port)) == 0:
-                break
+            try:
+                s.bind(('127.0.0.1', port))
+                return False
+            except OSError:
+                return True
 
     ico_path = os.path.join(BASE_DIR, "NosClean.ico")
     if not os.path.exists(ico_path):
         ico_path = os.path.join(STATIC_DIR, "favicon.ico")
+
+    # Iniciar servidor backend FastAPI en segundo plano si no está corriendo
+    server_running = is_port_in_use(8000)
+    if not server_running:
+        def run_server():
+            try:
+                config = uvicorn.Config(
+                    app=app,
+                    host="127.0.0.1",
+                    port=8000,
+                    loop="asyncio",
+                    http="h11",
+                    lifespan="off",
+                    log_config=None,  # Evita el fallo de DefaultFormatter en ejecutables sin consola
+                    log_level="critical"
+                )
+                server = uvicorn.Server(config)
+                server.run()
+            except Exception as e:
+                log_path = os.path.join(os.environ.get("TEMP", "."), "nosclean_error.log")
+                try:
+                    with open(log_path, "a", encoding="utf-8") as f:
+                        f.write(f"Server error: {e}\n")
+                except Exception:
+                    pass
+
+        server_thread = threading.Thread(target=run_server, daemon=True)
+        server_thread.start()
+        # Esperar hasta que uvicorn esté listo para responder (aprox 150 ms)
+        for _ in range(60):
+            time.sleep(0.05)
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(0.05)
+                if s.connect_ex(('127.0.0.1', 8000)) == 0:
+                    break
 
     # Lanzar la aplicación en ventana de escritorio nativa WebView2 (icono verde propio, cero Edge)
     try:
         import webview
         window = webview.create_window(
             title='NosClean',
-            url=app_url,
+            url='http://127.0.0.1:8000',
             width=1280,
             height=820,
             min_size=(960, 640)
@@ -275,7 +276,7 @@ if __name__ == "__main__":
         os._exit(0)
     except BaseException:
         # Fallback ultra-resiliente: si WebView2 o DLLs fallan en otra PC, abrir en navegador y mantener servidor vivo
-        launch_browser(app_url)
+        launch_browser()
         try:
             while True:
                 time.sleep(1)
