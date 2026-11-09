@@ -1,0 +1,323 @@
+/* ========================================================
+   NosClean — Palette Oficial
+   - Verde principal:   #087A45 (Marca, botones principales, iconos)
+   - Verde brillante:   #16B84E (Indicadores de limpieza, progreso, estados positivos)
+   - Verde oscuro:      #102D25 (Sidebar, encabezados y textos importantes)
+   - Fondo claro:       #F4F7F5 (Fondo general de la aplicación)
+   - Blanco:            #FFFFFF (Tarjetas, paneles, ventanas modales)
+   - Gris azulado:      #64748B (Textos secundarios y descripciones)
+   - Borde sutil:       #E2E8F0
+   ======================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+    --brand-primary: #087A45;
+    --brand-primary-hover: #066237;
+    --brand-bright: #16B84E;
+    --brand-dark: #102D25;
+    --bg-light: #F4F7F5;
+    --card-white: #FFFFFF;
+    --text-muted: #64748B;
+    --border-subtle: #E2E8F0;
+    --border-card: #E2E8F0;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background-color: var(--bg-light) !important;
+    color: var(--brand-dark) !important;
+}
+
+/* ================== CUSTOM SCROLLBAR ================== */
+::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+}
+::-webkit-scrollbar-track {
+    background: #E8ECE9;
+}
+::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
+}
+
+/* ================== TOP HEADER ================== */
+header {
+    background: #FFFFFF !important;
+    border-bottom: 1px solid var(--border-subtle) !important;
+    box-shadow: 0 2px 10px rgba(16, 45, 37, 0.04) !important;
+}
+
+/* ================== FIXED SIDEBAR (VERDE OSCURO #102D25) ================== */
+#main-sidebar {
+    position: fixed !important;
+    top: 64px !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 250px;
+    height: calc(100vh - 64px) !important;
+    z-index: 40 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    background: var(--brand-dark) !important; /* #102D25 */
+    border-right: 1px solid rgba(8, 122, 69, 0.35) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+#main-sidebar::-webkit-scrollbar-track {
+    background: #0B211B;
+}
+#main-sidebar::-webkit-scrollbar-thumb {
+    background: #19483B;
+}
+
+/* SIDEBAR TABS */
+.nav-tab {
+    position: relative;
+    user-select: none;
+    cursor: pointer;
+    color: #CBD5E1 !important;
+    border: 1px solid transparent !important;
+    background: transparent !important;
+    transition: all 0.2s ease !important;
+}
+
+.nav-tab:hover {
+    background: rgba(8, 122, 69, 0.35) !important;
+    color: #FFFFFF !important;
+}
+
+.nav-tab.active {
+    background: var(--brand-primary) !important; /* #087A45 */
+    color: #FFFFFF !important;
+    border-color: var(--brand-bright) !important; /* #16B84E */
+    box-shadow: 0 4px 14px rgba(8, 122, 69, 0.45) !important;
+}
+
+.nav-tab.active i {
+    color: #16B84E !important;
+}
+
+.nav-tab.active .nav-badge {
+    background: var(--brand-bright) !important;
+    color: var(--brand-dark) !important;
+}
+
+/* ================== COLLAPSED STATE ================== */
+#main-sidebar.collapsed {
+    width: 68px !important;
+}
+
+#main-sidebar.collapsed .nav-text,
+#main-sidebar.collapsed .nav-badge,
+#main-sidebar.collapsed .sidebar-footer {
+    display: none !important;
+}
+
+#main-sidebar.collapsed .nav-tab {
+    justify-content: center !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+#main-sidebar.collapsed .nav-tab i {
+    margin: 0 !important;
+    width: 20px !important;
+    height: 20px !important;
+}
+
+/* ================== MAIN CONTENT SCROLL AREA ================== */
+#main-content-scroll {
+    margin-left: 250px !important;
+    width: calc(100vw - 250px) !important;
+    height: calc(100vh - 64px) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    background-color: var(--bg-light) !important; /* #F4F7F5 */
+    transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    padding: 1.25rem !important;
+}
+
+body.sidebar-is-collapsed #main-sidebar {
+    width: 68px !important;
+}
+
+body.sidebar-is-collapsed #main-sidebar .nav-text,
+body.sidebar-is-collapsed #main-sidebar .nav-badge,
+body.sidebar-is-collapsed #main-sidebar .sidebar-footer {
+    display: none !important;
+}
+
+body.sidebar-is-collapsed #main-sidebar .nav-tab {
+    justify-content: center !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+body.sidebar-is-collapsed #main-content-scroll {
+    margin-left: 68px !important;
+    width: calc(100vw - 68px) !important;
+}
+
+/* ================== RESPONSIVE AUTO-ADAPT ================== */
+@media (max-width: 1150px) {
+    #main-sidebar {
+        width: 68px !important;
+    }
+    #main-sidebar .nav-text,
+    #main-sidebar .nav-badge,
+    #main-sidebar .sidebar-footer {
+        display: none !important;
+    }
+    #main-sidebar .nav-tab {
+        justify-content: center !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    #main-content-scroll {
+        margin-left: 68px !important;
+        width: calc(100vw - 68px) !important;
+        padding: 1rem !important;
+    }
+}
+
+#main-sidebar.manual-expanded {
+    width: 250px !important;
+    box-shadow: 4px 0 24px rgba(16, 45, 37, 0.2) !important;
+}
+#main-sidebar.manual-expanded .nav-text,
+#main-sidebar.manual-expanded .nav-badge,
+#main-sidebar.manual-expanded .sidebar-footer {
+    display: block !important;
+}
+#main-sidebar.manual-expanded .nav-tab {
+    justify-content: flex-start !important;
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+}
+
+/* ================== CARDS Y PANELES (BLANCO #FFFFFF) ================== */
+.glass-panel,
+.glass-card {
+    background: #FFFFFF !important;
+    backdrop-filter: none !important;
+    border: 1px solid var(--border-card) !important;
+    border-radius: 1rem !important;
+    box-shadow: 0 2px 10px rgba(16, 45, 37, 0.04) !important;
+    color: var(--brand-dark) !important;
+    transition: all 0.2s ease-in-out !important;
+}
+
+.glass-card:hover {
+    border-color: rgba(8, 122, 69, 0.3) !important;
+    box-shadow: 0 6px 18px rgba(16, 45, 37, 0.07) !important;
+    transform: translateY(-2px);
+}
+
+/* ================== TIPOGRAFÍA ================== */
+#main-content-scroll h1,
+#main-content-scroll h2,
+#main-content-scroll h3,
+#main-content-scroll h4,
+#main-content-scroll .text-white {
+    color: var(--brand-dark) !important; /* #102D25 */
+}
+
+#main-content-scroll p,
+#main-content-scroll .text-slate-300,
+#main-content-scroll .text-slate-400 {
+    color: var(--text-muted) !important; /* #64748B */
+}
+
+/* Barras de progreso de hardware */
+#main-content-scroll .bg-slate-700\/50 {
+    background-color: #E2E8F0 !important;
+}
+#main-content-scroll #cpu-bar,
+#main-content-scroll #ram-bar,
+#main-content-scroll #battery-bar {
+    background-color: var(--brand-bright) !important; /* #16B84E */
+}
+
+/* Items de listas y tablas */
+#main-content-scroll tr:hover {
+    background-color: #F8FAFC !important;
+}
+
+#main-content-scroll tr td {
+    border-bottom: 1px solid #F1F5F9 !important;
+    color: var(--brand-dark) !important;
+}
+
+/* ================== BOTONES Y ACCIONES ================== */
+/* Botón Optimizar PC */
+#btn-quick-optimize {
+    background: var(--brand-primary) !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    box-shadow: 0 2px 8px rgba(8, 122, 69, 0.25) !important;
+}
+
+#btn-quick-optimize:hover {
+    background: var(--brand-primary-hover) !important;
+}
+
+/* Botones secundarios en main */
+#main-content-scroll button.bg-slate-800,
+#main-content-scroll button.bg-slate-700 {
+    background: #FFFFFF !important;
+    color: var(--brand-dark) !important;
+    border: 1px solid var(--border-subtle) !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+}
+
+#main-content-scroll button.bg-slate-800:hover,
+#main-content-scroll button.bg-slate-700:hover {
+    background: #F8FAFC !important;
+    border-color: var(--brand-primary) !important;
+}
+
+/* Cabeceras de tabla limpias en todas las vistas */
+#main-content-scroll table thead,
+#main-content-scroll table thead tr,
+#main-content-scroll table thead th {
+    background-color: #F4F7F5 !important;
+    color: var(--text-muted) !important; /* #64748B */
+    border-bottom: 1px solid var(--border-subtle) !important;
+    font-weight: 600 !important;
+}
+
+/* Inputs y Selects */
+input, select {
+    background-color: #FFFFFF !important;
+    border: 1px solid #CBD5E1 !important;
+    color: var(--brand-dark) !important;
+}
+
+input:focus, select:focus {
+    border-color: var(--brand-primary) !important;
+    outline: 2px solid rgba(8, 122, 69, 0.2) !important;
+}
+
+/* Modales */
+#confirm-modal .glass-panel {
+    background: #FFFFFF !important;
+    border: 1px solid var(--border-subtle) !important;
+    box-shadow: 0 20px 40px rgba(16, 45, 37, 0.18) !important;
+}

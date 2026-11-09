@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <title>NosClean </title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            900: '#090d16',
+                            800: '#0f172a',
+                            700: '#1e293b',
+                            600: '#334155'
+                        },
+                        brand: {
+                            primary: '#087A45',
+                            bright: '#16B84E',
+                            dark: '#102D25',
+                            bg: '#F4F7F5',
+                            card: '#FFFFFF',
+                            muted: '#64748B'
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="/static/css/style.css?v=10">
+</head>
+
+<body class="h-screen w-screen overflow-hidden antialiased">
+
+    <!-- Top Navigation Header (100% Fixed at Top) -->
+    <header
+        class="h-16 w-full fixed top-0 left-0 z-50 bg-white border-b border-slate-200 px-3 sm:px-6 flex items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
+            <!-- Botón Desplegable / Plegable del Sidebar -->
+            <button onclick="toggleSidebar()" id="sidebar-toggle-btn" title="Plegar / Desplegar Menú Lateral"
+                class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-[#087A45] transition-all shadow-sm flex-shrink-0 cursor-pointer">
+                <i data-lucide="panel-left-close" class="w-5 h-5" id="sidebar-toggle-icon"></i>
+                <span class="text-xs font-bold hidden md:inline" id="sidebar-toggle-label">Menú</span>
+            </button>
+
+            <!-- Brand Logo & Title -->
+            <div class="flex items-center space-x-2.5 flex-shrink-0">
+                <img src="/static/logo.png" alt="NosClean Logo" class="h-9 w-9 object-contain drop-shadow-sm">
+                <div class="min-w-0">
+                    <h1
+                        class="text-base sm:text-lg font-extrabold text-[#102D25] tracking-tight leading-none truncate flex items-center gap-1.5">
+                        NosClean
+                        <span
+                            class="px-1.5 py-0.5 rounded text-[10px] font-black bg-[#16B84E]/15 text-[#087A45] border border-[#16B84E]/30">PC</span>
+                    </h1>
+                    <p class="text-[10px] sm:text-[11px] text-[#64748B] mt-0.5 hidden lg:block truncate font-medium">
+                        Auditoría inteligente, optimización y limpieza</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Status Pills -->
+        <div class="flex items-center space-x-2 text-xs flex-shrink-0">
+            <!-- BOTON DESTACADO: OPTIMIZAR PC EN 1 CLIC -->
+            <button onclick="quickOptimizePC()" id="btn-quick-optimize"
+                title="Optimizar PC en 1 Clic (Liberar memoria RAM inactiva y caches)"
+                class="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-[#087A45] hover:bg-[#066237] text-white font-extrabold shadow-sm shadow-[#087A45]/30 transition-all transform active:scale-95 cursor-pointer">
+                <i data-lucide="zap" class="w-4 h-4 text-[#16B84E] fill-[#16B84E]" id="optimize-icon"></i>
+                <span class="text-xs font-black tracking-wide" id="optimize-label">Optimizar PC</span>
+            </button>
+
+            <div id="status-user-pill"
+                class="hidden sm:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-full bg-[#F4F7F5] border border-slate-300 text-[#102D25] font-medium max-w-[170px] truncate">
+                <i data-lucide="user" class="w-3.5 h-3.5 text-[#087A45] flex-shrink-0"></i>
+                <span id="pill-user" class="truncate">Cargando...</span>
+            </div>
+            <div id="status-uptime-pill"
+                class="hidden md:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-full bg-[#F4F7F5] border border-slate-300 text-[#102D25] font-medium">
+                <i data-lucide="clock" class="w-3.5 h-3.5 text-[#16B84E]"></i>
+                <span id="pill-uptime">--</span>
+            </div>
+            <button onclick="refreshCurrentTab()" title="Actualizar datos"
+                class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-[#102D25] transition-colors cursor-pointer">
+                <i data-lucide="refresh-cw" class="w-4 h-4 text-[#087A45]" id="refresh-icon"></i>
+            </button>
+        </div>
+    </header>
+    <!-- FIXED SIDEBAR (NUNCA SE MUEVE AL HACER SCROLL) -->
+    <aside id="main-sidebar" class="select-none p-2.5">
+        <!-- Navegación Principal Compacta -->
+        <nav class="space-y-1">
+            <!-- 1. Consejos y Asesor -->
+            <button onclick="switchTab('advisor')" id="tab-btn-advisor" title="Consejos y Asesor de Limpieza"
+                class="nav-tab active flex items-center space-x-3 w-full px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20">
+                <i data-lucide="lightbulb" class="w-4 h-4 text-amber-400 flex-shrink-0"></i>
+                <span class="nav-text truncate">Consejos y Asesor</span>
+                <span
+                    class="ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500 text-dark-900 nav-badge">IA</span>
+            </button>
+
+            <!-- 2. Resumen Mi PC -->
+            <button onclick="switchTab('overview')" id="tab-btn-overview" title="Resumen de Mi PC"
+                class="nav-tab flex items-center space-x-3 w-full px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all text-slate-400 hover:text-white hover:bg-slate-800/50 border border-transparent">
+                <i data-lucide="cpu" class="w-4 h-4 text-brand-cyan flex-shrink-0"></i>
+                <span class="nav-text truncate">Resumen Mi PC</span>
+            </button>
+
+            <!-- 3. Limpiador Basura -->
+            <button onclick="switchTab('cleaner')" id="tab-btn-cleaner" title="Limpiador de Basura"
+                class="nav-tab flex items-center space-x-3 w-full px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all text-slate-400 hover:text-white hover:bg-slate-800/50 border border-transparent">
+                <i data-lucide="trash-2" class="w-4 h-4 text-brand-rose flex-shrink-0"></i>
+                <span class="nav-text truncate">Limpiador Basura</span>
+            </button>
+
+            <!-- 4. Archivos Pesados -->
+            <button onclick="switchTab('heavy')" id="tab-btn-heavy" title="Buscador de Archivos Gigantes"
+                class="nav-tab flex items-center space-x-3 w-full px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all text-slate-400 hover:text-white hover:bg-slate-800/50 border border-transparent">
+                <i data-lucide="hard-drive" class="w-4 h-4 text-brand-violet flex-shrink-0"></i>
+                <span class="nav-text truncate">Archivos Pesados</span>
+            </button>
+
+            <!-- 5. Programas Instalados -->
+            <button onclick="switchTab('apps')" id="tab-btn-apps" title="Programas Instalados"
+                class="nav-tab flex items-center space-x-3 w-full px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all text-slate-400 hover:text-white hover:bg-slate-800/50 border border-transparent">
+                <i data-lucide="layout-grid" class="w-4 h-4 text-brand-blue flex-shrink-0"></i>
+                <span class="nav-text truncate">Programas Instalados</span>
+            </button>
+
+            <!-- 6. Organizador -->
+            <button onclick="switchTab('organizer')" id="tab-btn-organizer" title="Organizador de Archivos"
+                class="nav-tab flex items-center space-x-3 w-full px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all text-slate-400 hover:text-white hover:bg-slate-800/50 border border-transparent">
+                <i data-lucide="folder-cog" class="w-4 h-4 text-amber-400 flex-shrink-0"></i>
+                <span class="nav-text truncate">Organizador</span>
+            </button>
+
+            <!-- 7. Inicio y Procesos -->
+            <button onclick="switchTab('startup')" id="tab-btn-startup" title="Inicio y Procesos de Windows"
+                class="nav-tab flex items-center space-x-3 w-full px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all text-slate-400 hover:text-white hover:bg-slate-800/50 border border-transparent">
+                <i data-lucide="zap" class="w-4 h-4 text-brand-emerald flex-shrink-0"></i>
+                <span class="nav-text truncate">Inicio y Procesos</span>
+            </button>
+        </nav>
+
+        <!-- Atajos Rápidos Compactos -->
+        <div class="pt-2.5 border-t border-slate-700/50 sidebar-footer">
+            <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 px-1 nav-text">
+                Atajos Windows</p>
+            <div class="grid grid-cols-2 gap-1.5">
+                <button onclick="openWindowsTool('taskmgr')" title="Administrador de Tareas"
+                    class="flex items-center space-x-1 p-1.5 rounded-lg bg-slate-800/70 hover:bg-slate-700 text-[11px] text-slate-300 transition-colors">
+                    <i data-lucide="activity" class="w-3.5 h-3.5 text-cyan-400 flex-shrink-0"></i>
+                    <span class="nav-text truncate">Admin Tareas</span>
+                </button>
+                <button onclick="openWindowsTool('storagesense')" title="Sensor de Espacio"
+                    class="flex items-center space-x-1 p-1.5 rounded-lg bg-slate-800/70 hover:bg-slate-700 text-[11px] text-slate-300 transition-colors">
+                    <i data-lucide="pie-chart" class="w-3.5 h-3.5 text-emerald-400 flex-shrink-0"></i>
+                    <span class="nav-text truncate">Sensor Espacio</span>
+                </button>
+                <button onclick="openWindowsTool('appsfeatures')" title="Aplicaciones Instaladas"
+                    class="flex items-center space-x-1 p-1.5 rounded-lg bg-slate-800/70 hover:bg-slate-700 text-[11px] text-slate-300 transition-colors">
+                    <i data-lucide="package" class="w-3.5 h-3.5 text-blue-400 flex-shrink-0"></i>
+                    <span class="nav-text truncate">Apps Win</span>
+                </button>
+                <button onclick="openWindowsTool('startup')" title="Ajustes de Inicio"
+                    class="flex items-center space-x-1 p-1.5 rounded-lg bg-slate-800/70 hover:bg-slate-700 text-[11px] text-slate-300 transition-colors">
+                    <i data-lucide="power" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
+                    <span class="nav-text truncate">Inicio Win</span>
+                </button>
+            </div>
+            <!-- Boton para apagar el servidor completamente (0 MB de consumo) -->
+            <div class="mt-2 pt-2 border-t border-slate-700/50">
+                <button onclick="shutdownApp()"
+                    title="Cerrar la aplicacion completamente (0 MB de consumo en segundo plano)"
+                    class="flex items-center space-x-2 w-full p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-300 text-xs font-semibold transition-all">
+                    <i data-lucide="power" class="w-4 h-4 text-rose-400 flex-shrink-0"></i>
+                    <span class="nav-text truncate">Apagar y Salir</span>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN SCROLLABLE CONTENT (CON SCROLL FLUIDO INDEPENDIENTE) -->
+    <main id="main-content-scroll" class="mt-16">
+
+        <!-- TAB: ADVISOR (CONSEJOS INTELIGENTES) -->
+        <section id="tab-advisor" class="space-y-5 max-w-7xl mx-auto">
+            <!-- Health Score Banner (100% Responsivo, Sin Solapamientos) -->
+            <div class="glass-panel rounded-2xl p-4 sm:p-6 border border-amber-500/30">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div class="flex items-center space-x-3.5 sm:space-x-4 min-w-0">
+                        <div
+                            class="h-14 w-14 sm:h-16 sm:w-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center flex-shrink-0 shadow-lg shadow-amber-500/10">
+                            <span class="text-2xl sm:text-3xl font-black text-amber-400" id="advisor-score">--</span>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center space-x-2 flex-wrap gap-y-1">
+                                <span
+                                    class="px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-[#16B84E]/15 text-[#087A45] border border-[#16B84E]/30">
+                                    Diagnóstico de tu PC
+                                </span>
+                                <span class="text-xs text-slate-400 truncate" id="advisor-status">Analizando
+                                    equipo...</span>
+                            </div>
+                            <h2 class="text-base sm:text-xl font-bold text-white mt-1 truncate">¿Qué deberías
+                                limpiar y organizar en tu PC?</h2>
+                            <p class="text-xs sm:text-sm text-slate-300 mt-0.5 line-clamp-2">
+                                Este asesor analiza tu almacenamiento, arranque y descargas para darte
+                                recomendaciones claras y seguras.
+                            </p>
+                        </div>
+                    </div>
+                    <button onclick="loadAdvisor()"
+                        class="px-4 py-2.5 rounded-xl bg-[#087A45] hover:bg-[#066237] text-white font-semibold text-xs sm:text-sm shadow-sm flex items-center space-x-1.5 transition-all flex-shrink-0 self-start md:self-center cursor-pointer">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                        <span>Volver a Diagnosticar</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Actionable Recommendations Grid (Fluido en 1 o 2 columnas según pantalla) -->
+            <div>
+                <h3 class="text-sm sm:text-base font-bold text-white flex items-center space-x-2 mb-3">
+                    <i data-lucide="check-circle-2" class="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400"></i>
+                    <span>Acciones Recomendadas para tu Equipo</span>
+                </h3>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-3.5 sm:gap-4" id="advisor-recommendations-grid">
+                    <div class="col-span-1 lg:col-span-2 text-center py-10 text-slate-400">Analizando
+                        recomendaciones...</div>
+                </div>
+            </div>
+
+            <!-- Golden Rules: What to Delete vs What NEVER to Touch (Stack en pantallas medianas) -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-3.5 sm:gap-4">
+                <!-- Qué SÍ puedes borrar y organizar -->
+                <div class="glass-card rounded-2xl p-4 sm:p-5 border border-emerald-500/30 bg-emerald-950/10 min-w-0">
+                    <div class="flex items-center space-x-2.5 text-emerald-400 mb-2.5">
+                        <div class="p-1.5 sm:p-2 rounded-xl bg-emerald-500/10">
+                            <i data-lucide="shield-check" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                        </div>
+                        <h4 class="text-sm sm:text-base font-bold text-white truncate">✅ Qué SÍ puedes limpiar y
+                            organizar</h4>
+                    </div>
+                    <ul class="space-y-2 text-xs text-slate-300 leading-relaxed">
+                        <li class="flex items-start space-x-2">
+                            <span class="text-emerald-400 font-bold">•</span>
+                            <span><strong>Archivos Temporales (%TEMP% y C:\Windows\Temp):</strong> Son restos de
+                                aplicaciones cerradas e instaladores. Es 100% seguro borrarlos.</span>
+                        </li>
+                        <li class="flex items-start space-x-2">
+                            <span class="text-emerald-400 font-bold">•</span>
+                            <span><strong>Instaladores en Descargas (.exe, .msi):</strong> Si ya instalaste el
+                                programa o juego, el archivo instalador ya no se necesita.</span>
+                        </li>
+                        <li class="flex items-start space-x-2">
+                            <span class="text-emerald-400 font-bold">•</span>
+                            <span><strong>Caché de Navegadores (Chrome, Edge):</strong> Acelera la navegación
+                                pero acumula gigas con los meses. Puedes limpiarlo sin perder
+                                contraseñas.</span>
+                        </li>
+                        <li class="flex items-start space-x-2">
+                            <span class="text-emerald-400 font-bold">•</span>
+                            <span><strong>Papelera de Reciclaje:</strong> Los archivos enviados a la papelera
+                                aún ocupan espacio en disco hasta que la vacías.</span>
+                        </li>
+                        <li class="flex items-start space-x-2">
+                            <span class="text-emerald-400 font-bold">•</span>
+                            <span><strong>Desactivar Programas de Inicio:</strong> No los desinstala;
+                                simplemente evita que se abran solos al encender tu PC.</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Qué NUNCA debes borrar a mano -->
+                <div class="glass-card rounded-2xl p-4 sm:p-5 border border-rose-500/30 bg-rose-950/10 min-w-0">
+                    <div class="flex items-center space-x-2.5 text-rose-400 mb-2.5">
+                        <div class="p-1.5 sm:p-2 rounded-xl bg-rose-500/10">
+                            <i data-lucide="alert-octagon" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                        </div>
+                        <h4 class="text-sm sm:text-base font-bold text-white truncate">❌ Qué NUNCA debes borrar
+                            a mano</h4>
+                    </div>
+                    <ul class="space-y-2 text-xs text-slate-300 leading-relaxed">
+                        <li class="flex items-start space-x-2">
+                            <span class="text-rose-400 font-bold">•</span>
+                            <span><strong>Carpeta C:\Windows y System32:</strong> Son los archivos vitales de
+                                Windows. Tocarlos puede dañar el arranque del sistema.</span>
+                        </li>
+                        <li class="flex items-start space-x-2">
+                            <span class="text-rose-400 font-bold">•</span>
+                            <span><strong>Carpetas de Program Files a mano:</strong> Para desinstalar un
+                                programa usa siempre la pestaña <em>Programas Instalados</em> o el desinstalador
+                                de Windows.</span>
+                        </li>
+                        <li class="flex items-start space-x-2">
+                            <span class="text-rose-400 font-bold">•</span>
+                            <span><strong>Archivos que inicien con '$' o terminen en .sys:</strong> Archivos
+                                protegidos del sistema de archivos NTFS.</span>
+                        </li>
+                        <li class="flex items-start space-x-2">
+                            <span class="text-rose-400 font-bold">•</span>
+                            <span><strong>Carpetas AppData sin conocer la app:</strong> Allí se guardan
+                                perfiles, datos de inicio y partidas de juegos.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 1: OVERVIEW -->
+        <section id="tab-overview" class="space-y-5 hidden max-w-7xl mx-auto">
+            <!-- Welcome & System Banner -->
+            <div class="glass-panel rounded-2xl p-4 sm:p-6 border border-slate-700/60">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="min-w-0">
+                        <div class="flex items-center space-x-2">
+                            <span
+                                class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"
+                                id="os-badge">Windows</span>
+                            <span class="text-xs text-slate-400" id="os-arch">64-bit</span>
+                        </div>
+                        <h2 class="text-xl sm:text-2xl font-bold text-white mt-1 truncate" id="pc-hostname">
+                            Cargando equipo...</h2>
+                        <p class="text-xs sm:text-sm text-slate-300 mt-0.5 truncate" id="os-details">Recopilando
+                            especificaciones...</p>
+                    </div>
+                    <div class="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+                        <button onclick="quickOptimizePC()"
+                            class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-dark-900 font-extrabold text-xs sm:text-sm shadow-lg shadow-emerald-500/25 flex items-center space-x-1.5 transition-all transform active:scale-95 cursor-pointer">
+                            <i data-lucide="zap" class="w-4 h-4 fill-dark-900 text-dark-900"></i>
+                            <span>⚡ Optimizar PC Ahora</span>
+                        </button>
+                        <button onclick="switchTab('advisor')"
+                            class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-dark-900 font-bold text-xs sm:text-sm shadow-md flex items-center space-x-1.5 transition-all">
+                            <i data-lucide="lightbulb" class="w-4 h-4"></i>
+                            <span>Ver Consejos</span>
+                        </button>
+                        <button onclick="switchTab('cleaner'); scanJunkAuto();"
+                            class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium text-xs sm:text-sm flex items-center space-x-1.5 transition-colors">
+                            <i data-lucide="trash-2" class="w-4 h-4 text-brand-rose"></i>
+                            <span>Escanear Basura</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hardware Metrics Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+                <!-- CPU Card -->
+                <div class="glass-card rounded-2xl p-4 sm:p-5 flex flex-col justify-between min-w-0">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Procesador</span>
+                        <div class="p-1.5 rounded-xl bg-cyan-500/10 text-cyan-400"><i data-lucide="cpu"
+                                class="w-4 h-4 sm:w-5 sm:h-5"></i></div>
+                    </div>
+                    <div>
+                        <h3 class="text-xs sm:text-sm font-semibold text-white truncate" id="cpu-name">
+                            Cargando...</h3>
+                        <div class="flex items-baseline space-x-2 mt-2">
+                            <span class="text-2xl sm:text-3xl font-extrabold text-white" id="cpu-usage">--%</span>
+                            <span class="text-[11px] text-slate-400" id="cpu-cores">-- núcleos</span>
+                        </div>
+                        <div class="w-full bg-slate-700/50 rounded-full h-2 mt-2.5 overflow-hidden">
+                            <div id="cpu-bar" class="bg-cyan-400 h-2 rounded-full transition-all duration-500"
+                                style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RAM Card -->
+                <div class="glass-card rounded-2xl p-4 sm:p-5 flex flex-col justify-between min-w-0">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Memoria
+                            RAM</span>
+                        <div class="p-1.5 rounded-xl bg-indigo-500/10 text-indigo-400"><i data-lucide="memory-stick"
+                                class="w-4 h-4 sm:w-5 sm:h-5"></i></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-baseline">
+                            <span class="text-2xl sm:text-3xl font-extrabold text-white" id="ram-used">--
+                                GB</span>
+                            <span class="text-[11px] text-slate-400" id="ram-total">de -- GB</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-1" id="ram-free">Disponible: -- GB</p>
+                        <div class="w-full bg-slate-700/50 rounded-full h-2 mt-2.5 overflow-hidden">
+                            <div id="ram-bar" class="bg-indigo-500 h-2 rounded-full transition-all duration-500"
+                                style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GPU Card -->
+                <div class="glass-card rounded-2xl p-4 sm:p-5 flex flex-col justify-between min-w-0">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Gráficos
+                            (GPU)</span>
+                        <div class="p-1.5 rounded-xl bg-violet-500/10 text-violet-400"><i data-lucide="monitor"
+                                class="w-4 h-4 sm:w-5 sm:h-5"></i></div>
+                    </div>
+                    <div>
+                        <h3 class="text-xs sm:text-sm font-semibold text-white truncate" id="gpu-name">
+                            Cargando...</h3>
+                        <p class="text-[11px] text-slate-300 mt-1 truncate" id="gpu-vram">VRAM: --</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5 truncate" id="gpu-driver">Driver: --</p>
+                    </div>
+                </div>
+
+                <!-- Battery Card -->
+                <div class="glass-card rounded-2xl p-4 sm:p-5 flex flex-col justify-between min-w-0">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Batería</span>
+                        <div class="p-1.5 rounded-xl bg-emerald-500/10 text-emerald-400"><i
+                                data-lucide="battery-charging" class="w-4 h-4 sm:w-5 sm:h-5"></i></div>
+                    </div>
+                    <div>
+                        <div class="flex items-baseline space-x-2">
+                            <span class="text-2xl sm:text-3xl font-extrabold text-white" id="battery-pct">--%</span>
+                            <span class="text-[11px] text-slate-400" id="battery-status">Detectando...</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-1" id="battery-detail">Alimentación AC</p>
+                        <div class="w-full bg-slate-700/50 rounded-full h-2 mt-2.5 overflow-hidden">
+                            <div id="battery-bar" class="bg-emerald-400 h-2 rounded-full transition-all duration-500"
+                                style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hard Drives Space Section -->
+            <div>
+                <h3 class="text-base sm:text-lg font-bold text-white flex items-center space-x-2 mb-3">
+                    <i data-lucide="hard-drive" class="w-4 h-4 sm:w-5 sm:h-5 text-brand-cyan"></i>
+                    <span>Unidades de Disco y Almacenamiento</span>
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4" id="drives-container"></div>
+            </div>
+        </section>
+
+        <!-- TAB 2: JUNK CLEANER -->
+        <section id="tab-cleaner" class="space-y-5 hidden max-w-7xl mx-auto">
+            <div class="glass-panel rounded-2xl p-4 sm:p-6 border border-slate-700/60">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-bold text-white flex items-center space-x-2">
+                            <i data-lucide="trash-2" class="w-5 h-5 text-rose-400"></i>
+                            <span>Limpieza de Archivos Temporales y Basura</span>
+                        </h2>
+                        <p class="text-xs sm:text-sm text-slate-400 mt-1">
+                            Escanea y elimina cachés, reportes de fallos, temporales y papelera sin tocar tus
+                            archivos personales.
+                        </p>
+                    </div>
+                    <div class="flex items-center space-x-2.5 flex-wrap sm:flex-nowrap">
+                        <button onclick="scanJunk()" id="btn-scan-junk"
+                            class="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-[#102D25] font-medium text-xs sm:text-sm flex items-center space-x-1.5 transition-colors shadow-sm cursor-pointer">
+                            <i data-lucide="search" class="w-4 h-4"></i>
+                            <span>Analizar de Nuevo</span>
+                        </button>
+                        <button onclick="confirmCleanSelected()" id="btn-clean-junk"
+                            class="px-4 py-2 rounded-xl bg-[#087A45] hover:bg-[#066237] text-white font-semibold text-xs sm:text-sm shadow-sm flex items-center space-x-1.5 transition-all cursor-pointer">
+                            <i data-lucide="trash" class="w-4 h-4"></i>
+                            <span>Limpiar Seleccionados</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Clean Scan Stats Banner -->
+                <div class="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3 pt-5 border-t border-slate-700/60">
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <p class="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">Espacio Recuperable</p>
+        <p class="text-xl sm:text-2xl font-black text-[#087A45] mt-1" id="junk-total-size">--</p>
+    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <p class="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">Archivos Detectados</p>
+        <p class="text-xl sm:text-2xl font-black text-[#102D25] mt-1" id="junk-total-files">--</p>
+    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <p class="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">Estado del Análisis</p>
+        <p class="text-xs sm:text-sm font-semibold text-[#16B84E] mt-1.5 flex items-center space-x-1.5" id="junk-status-label">
+            <i data-lucide="check-circle" class="w-4 h-4"></i>
+            <span>Listo para analizar</span>
+        </p>
+    </div>
+                </div>
+            </div>
+
+            <!-- Junk Categories List -->
+            <div class="glass-card rounded-2xl p-4 sm:p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm sm:text-base font-semibold text-white">Categorías de Basura Encontradas
+                    </h3>
+                    <div class="flex items-center space-x-2 text-xs">
+                        <button onclick="toggleAllJunk(true)" class="text-cyan-400 hover:underline">Seleccionar
+                            Todos</button>
+                        <span class="text-slate-600">•</span>
+                        <button onclick="toggleAllJunk(false)"
+                            class="text-slate-400 hover:underline">Deseleccionar</button>
+                    </div>
+                </div>
+                <div class="space-y-2.5" id="junk-categories-list">
+                    <div class="text-center py-8 text-slate-400">Presiona "Analizar de Nuevo" para iniciar el
+                        escaneo.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: HEAVY FILES -->
+        <section id="tab-heavy" class="space-y-5 hidden max-w-7xl mx-auto">
+            <div class="glass-panel rounded-2xl p-4 sm:p-6 border border-slate-700/60">
+                <h2 class="text-lg sm:text-xl font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="hard-drive" class="w-5 h-5 text-violet-400"></i>
+                    <span>Buscador de Archivos Gigantes</span>
+                </h2>
+                <p class="text-xs sm:text-sm text-slate-400 mt-1">
+                    Descubre qué archivos individuales ocupan la mayor parte de tu disco duro.
+                </p>
+
+                <!-- Search Controls -->
+                <div
+                    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4 pt-4 border-t border-slate-700/60">
+                    <div class="sm:col-span-2">
+                        <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Ruta o
+                            Carpeta</label>
+                        <div class="flex space-x-2">
+                            <select id="heavy-path-select" onchange="onHeavyPresetChange()"
+                                class="bg-white border border-slate-300 rounded-xl px-2.5 py-2 text-xs sm:text-sm text-[#102D25] focus:outline-none focus:border-violet-500 w-1/3">
+                                <option value="downloads" selected>Descargas</option>
+                                <option value="videos">Videos</option>
+                                <option value="desktop">Escritorio</option>
+                                <option value="documents">Documentos</option>
+                                <option value="user_profile">Mi Perfil</option>
+                                <option value="c_drive">Disco C:\</option>
+                                <option value="d_drive">Disco D:\</option>
+                                <option value="custom">Personalizada</option>
+                            </select>
+                            <input type="text" id="heavy-path-input" placeholder="Ruta a escanear"
+                                class="flex-1 bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs sm:text-sm text-[#102D25] focus:outline-none focus:border-violet-500">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Tamaño
+                            Mínimo</label>
+                        <select id="heavy-min-size"
+                            class="w-full bg-white border border-slate-300 rounded-xl px-2.5 py-2 text-xs sm:text-sm text-[#102D25] focus:outline-none focus:border-violet-500">
+                            <option value="50">Mayores a 50 MB</option>
+                            <option value="100" selected>Mayores a 100 MB</option>
+                            <option value="500">Mayores a 500 MB</option>
+                            <option value="1024">Mayores a 1 GB</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-end">
+                        <button onclick="scanHeavyFiles()" id="btn-scan-heavy"
+                            class="w-full py-2 rounded-xl bg-[#087A45] hover:bg-[#066237] text-white font-semibold text-xs sm:text-sm shadow-sm flex items-center justify-center space-x-1.5 transition-all cursor-pointer">
+                            <i data-lucide="search" class="w-4 h-4"></i>
+                            <span>Buscar Archivos</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Table -->
+            <div class="glass-card rounded-2xl p-4 sm:p-6">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center space-x-2">
+                        <h3 class="text-sm sm:text-base font-semibold text-white">Archivos Encontrados</h3>
+                        <span id="heavy-results-badge"
+                            class="px-2 py-0.5 rounded-full text-xs font-semibold bg-violet-500/20 text-violet-300">0</span>
+                    </div>
+                    <span id="heavy-total-found-size" class="text-xs sm:text-sm font-bold text-violet-400"></span>
+                </div>
+                <div class="overflow-x-auto w-full">
+                    <table class="w-full text-left text-xs sm:text-sm text-slate-300 min-w-[600px]">
+                        <thead class="text-[11px] uppercase bg-[#F4F7F5] text-[#64748B] border-b border-slate-200 font-semibold">
+                            <tr>
+                                <th class="px-3.5 py-2.5 rounded-l-lg">Archivo</th>
+                                <th class="px-3.5 py-2.5">Tamaño</th>
+                                <th class="px-3.5 py-2.5">Ubicación</th>
+                                <th class="px-3.5 py-2.5">Modificado</th>
+                                <th class="px-3.5 py-2.5 text-right rounded-r-lg">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="heavy-files-tbody" class="divide-y divide-slate-800">
+                            <tr>
+                                <td colspan="5" class="text-center py-8 text-slate-400">Selecciona una carpeta y
+                                    presiona "Buscar Archivos".</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: INSTALLED SOFTWARE -->
+        <section id="tab-apps" class="space-y-5 hidden max-w-7xl mx-auto">
+            <div class="glass-panel rounded-2xl p-4 sm:p-6 border border-slate-700/60">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-bold text-white flex items-center space-x-2">
+                            <i data-lucide="layout-grid" class="w-5 h-5 text-blue-400"></i>
+                            <span>Programas y Aplicaciones Instaladas</span>
+                        </h2>
+                        <p class="text-xs sm:text-sm text-slate-400 mt-1">
+                            Revisa el software instalado en tu equipo, tamaño estimado y accesos para
+                            desinstalar.
+                        </p>
+                    </div>
+                    <button onclick="openWindowsTool('appsfeatures')"
+                        class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-medium text-xs sm:text-sm flex items-center space-x-1.5 transition-colors self-start sm:self-center">
+                        <i data-lucide="external-link" class="w-4 h-4"></i>
+                        <span>Ajustes Windows</span>
+                    </button>
+                </div>
+
+                <!-- Search & Filter Bar -->
+                <div
+                    class="mt-4 pt-4 border-t border-slate-700/60 flex flex-col sm:flex-row gap-3 items-center justify-between">
+                    <div class="relative w-full sm:w-80">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
+                        <input type="text" id="apps-search-input" oninput="filterApps()"
+                            placeholder="Buscar programa..."
+                            class="w-full bg-white border border-slate-300 rounded-xl pl-9 pr-3 py-1.5 text-xs sm:text-sm text-[#102D25] focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
+                        <label class="text-xs text-slate-400">Ordenar:</label>
+                        <select id="apps-sort-select" onchange="sortApps()"
+                            class="bg-white border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs text-[#102D25] focus:outline-none focus:border-blue-500">
+                            <option value="size_desc" selected>Mayor Tamaño</option>
+                            <option value="name_asc">Nombre (A - Z)</option>
+                            <option value="date_desc">Más Recientes</option>
+                        </select>
+                        <span id="apps-count-badge"
+                            class="px-2.5 py-1 rounded-xl bg-blue-500/20 text-blue-400 text-xs font-semibold">0
+                            programas</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Apps Table -->
+            <div class="glass-card rounded-2xl p-4 sm:p-6">
+                <div class="overflow-x-auto w-full">
+                    <table class="w-full text-left text-xs sm:text-sm text-slate-300 min-w-[650px]">
+                        <thead class="text-[11px] uppercase bg-[#F4F7F5] text-[#64748B] border-b border-slate-200 font-semibold">
+                            <tr>
+                                <th class="px-3.5 py-2.5 rounded-l-lg">Programa</th>
+                                <th class="px-3.5 py-2.5">Editor</th>
+                                <th class="px-3.5 py-2.5">Versión</th>
+                                <th class="px-3.5 py-2.5">Tamaño</th>
+                                <th class="px-3.5 py-2.5">Instalado</th>
+                                <th class="px-3.5 py-2.5 text-right rounded-r-lg">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="apps-tbody" class="divide-y divide-slate-800">
+                            <tr>
+                                <td colspan="6" class="text-center py-8 text-slate-400">Cargando lista de
+                                    programas...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: ORGANIZER -->
+        <section id="tab-organizer" class="space-y-5 hidden max-w-7xl mx-auto">
+            <div class="glass-panel rounded-2xl p-4 sm:p-6 border border-slate-700/60">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-bold text-white flex items-center space-x-2">
+                            <i data-lucide="folder-cog" class="w-5 h-5 text-amber-400"></i>
+                            <span>Organizador Inteligente de Archivos Sueltos</span>
+                        </h2>
+                        <p class="text-xs sm:text-sm text-slate-400 mt-1">
+                            Organiza Descargas o Escritorio clasificando instaladores, fotos y documentos en
+                            subcarpetas.
+                        </p>
+                    </div>
+                    <div class="flex items-center space-x-2 flex-wrap sm:flex-nowrap">
+                        <button onclick="organizeFiles(true)" id="btn-organize-preview"
+                            class="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-[#102D25] font-medium text-xs sm:text-sm flex items-center space-x-1.5 transition-colors shadow-sm cursor-pointer">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                            <span>Vista Previa</span>
+                        </button>
+                        <button onclick="organizeFiles(false)" id="btn-organize-execute"
+                            class="px-4 py-2 rounded-xl bg-[#087A45] hover:bg-[#066237] text-white font-semibold text-xs sm:text-sm shadow-sm flex items-center space-x-1.5 transition-all cursor-pointer">
+                            <i data-lucide="sparkles" class="w-4 h-4"></i>
+                            <span>Organizar Ahora</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-4 border-t border-slate-700/60 flex items-center space-x-2.5 flex-wrap gap-y-2">
+                    <label class="text-[11px] font-semibold text-slate-300 uppercase">Carpeta:</label>
+                    <select id="organizer-preset-select" onchange="onOrganizerPresetChange()"
+                        class="bg-white border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs sm:text-sm text-[#102D25] focus:outline-none focus:border-amber-500">
+                        <option value="downloads" selected>Descargas</option>
+                        <option value="desktop">Escritorio</option>
+                    </select>
+                    <button onclick="scanOrganizer()"
+                        class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 border border-slate-700 flex items-center space-x-1">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                        <span>Escanear</span>
+                    </button>
+                </div>
+
+                <!-- Categories Stats Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 mt-3.5" id="organizer-cat-grid">
+                </div>
+            </div>
+
+            <!-- Loose Files Table -->
+            <div class="glass-card rounded-2xl p-4 sm:p-6">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-sm sm:text-base font-semibold text-white">Archivos Sueltos en la Raíz</h3>
+                    <span id="organizer-files-count" class="text-xs text-slate-400"></span>
+                </div>
+                <div class="overflow-x-auto w-full">
+                    <table class="w-full text-left text-xs sm:text-sm text-slate-300 min-w-[550px]">
+                        <thead class="text-[11px] uppercase bg-[#F4F7F5] text-[#64748B] border-b border-slate-200 font-semibold">
+                            <tr>
+                                <th class="px-3.5 py-2.5 rounded-l-lg">Archivo</th>
+                                <th class="px-3.5 py-2.5">Categoría</th>
+                                <th class="px-3.5 py-2.5">Tamaño</th>
+                                <th class="px-3.5 py-2.5">Antigüedad</th>
+                                <th class="px-3.5 py-2.5 text-right rounded-r-lg">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="organizer-tbody" class="divide-y divide-slate-800">
+                            <tr>
+                                <td colspan="5" class="text-center py-8 text-slate-400">Escaneando archivos para
+                                    organizar...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 6: STARTUP & TASKS -->
+        <section id="tab-startup" class="space-y-5 hidden max-w-7xl mx-auto">
+            <div class="glass-panel rounded-2xl p-4 sm:p-6 border border-slate-700/60">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-bold text-white flex items-center space-x-2">
+                            <i data-lucide="zap" class="w-5 h-5 text-emerald-400"></i>
+                            <span>Programas de Inicio de Windows</span>
+                        </h2>
+                        <p class="text-xs sm:text-sm text-slate-400 mt-1">
+                            Estos programas inician solos al encender la PC y pueden ralentizar el arranque.
+                        </p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="openWindowsTool('startup')"
+                            class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-medium text-xs sm:text-sm flex items-center space-x-1.5 transition-colors">
+                            <i data-lucide="settings" class="w-4 h-4"></i>
+                            <span>Ajustes Inicio</span>
+                        </button>
+                        <button onclick="openWindowsTool('taskmgr')"
+                            class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs sm:text-sm shadow-md flex items-center space-x-1.5 transition-all">
+                            <i data-lucide="activity" class="w-4 h-4"></i>
+                            <span>Admin Tareas</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Startup Applications Table -->
+            <div class="glass-card rounded-2xl p-4 sm:p-6">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-sm sm:text-base font-semibold text-white">Aplicaciones en Inicio Automático
+                    </h3>
+                    <span id="startup-count-badge"
+                        class="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300">0</span>
+                </div>
+                <div class="overflow-x-auto w-full">
+                    <table class="w-full text-left text-xs sm:text-sm text-slate-300 min-w-[550px]">
+                        <thead class="text-[11px] uppercase bg-[#F4F7F5] text-[#64748B] border-b border-slate-200 font-semibold">
+                            <tr>
+                                <th class="px-3.5 py-2.5 rounded-l-lg">Nombre</th>
+                                <th class="px-3.5 py-2.5">Ubicación</th>
+                                <th class="px-3.5 py-2.5">Comando</th>
+                                <th class="px-3.5 py-2.5 text-right rounded-r-lg">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="startup-tbody" class="divide-y divide-slate-800">
+                            <tr>
+                                <td colspan="4" class="text-center py-8 text-slate-400">Cargando programas de
+                                    inicio...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Top Memory Processes -->
+            <div class="glass-card rounded-2xl p-4 sm:p-6">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-sm sm:text-base font-semibold text-white flex items-center space-x-2">
+                        <i data-lucide="cpu" class="w-4 h-4 text-cyan-400"></i>
+                        <span>Procesos Activos con Mayor Consumo de RAM</span>
+                    </h3>
+                    <button onclick="loadProcesses()"
+                        class="text-xs text-cyan-400 hover:underline flex items-center space-x-1">
+                        <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+                        <span>Refrescar</span>
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="top-procs-grid"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Notification Toasts Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none">
+    </div>
+
+    <!-- Generic Confirmation Modal -->
+    <div id="confirm-modal"
+        class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="glass-panel bg-dark-800 rounded-2xl max-w-md w-full p-5 sm:p-6 border border-slate-700 shadow-2xl">
+            <div class="flex items-center space-x-3 text-rose-400 mb-3">
+                <div class="p-2 rounded-xl bg-rose-500/10">
+                    <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+                </div>
+                <h3 class="text-base sm:text-lg font-bold text-white" id="modal-title">Confirmar Acción</h3>
+            </div>
+            <p class="text-xs sm:text-sm text-slate-300 mt-2" id="modal-message">¿Estás seguro de continuar con
+                esta operación?</p>
+            <div class="mt-5 flex justify-end space-x-2.5">
+                <button onclick="closeConfirmModal(false)"
+                    class="px-3.5 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs sm:text-sm font-medium transition-colors">
+                    Cancelar
+                </button>
+                <button id="modal-confirm-btn"
+                    class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs sm:text-sm font-semibold shadow-md transition-all">
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="/static/js/app.js?v=10"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>
