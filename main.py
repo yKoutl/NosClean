@@ -186,7 +186,15 @@ def launch_browser():
     webbrowser.open(url)
 
 if __name__ == "__main__":
-    import socket, threading
+    import socket, threading, ctypes
+
+    # Registrar AppUserModelID para que Windows asigne el icono oficial de NosClean en la barra de tareas
+    try:
+        myappid = 'NosClean.OptimizationSuite.v5.0.3'
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+    except Exception:
+        pass
+
     def is_port_busy(port=8000):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             return s.connect_ex(('127.0.0.1', port)) == 0
@@ -194,6 +202,28 @@ if __name__ == "__main__":
     if is_port_busy(8000):
         launch_browser()
     else:
+        # En modo ejecutable (.exe), arrancar como ventana de escritorio nativa WebView2
         if getattr(sys, 'frozen', False):
-            threading.Thread(target=launch_browser, daemon=True).start()
-        uvicorn.run(app, host="127.0.0.1", port=8000, log_level="warning")
+            server_thread = threading.Thread(
+                target=lambda: uvicorn.run(app, host="127.0.0.1", port=8000, log_level="warning"),
+                daemon=True
+            )
+            server_thread.start()
+
+            try:
+                import webview
+                ico_path = os.path.join(BASE_DIR, "NosClean.ico")
+                window = webview.create_window(
+                    title='NosClean',
+                    url='http://127.0.0.1:8000',
+                    width=1280,
+                    height=820,
+                    min_size=(960, 640)
+                )
+                webview.start()
+                os._exit(0)
+            except Exception:
+                launch_browser()
+                server_thread.join()
+        else:
+            uvicorn.run(app, host="127.0.0.1", port=8000, log_level="warning")

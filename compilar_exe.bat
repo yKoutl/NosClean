@@ -17,7 +17,10 @@ python -m PyInstaller ^
     --onefile ^
     --icon="NosClean.ico" ^
     --add-data="static;static" ^
+    --add-data="NosClean.ico;." ^
     --name="NosClean" ^
+    --hidden-import="webview" ^
+    --hidden-import="clr" ^
     --hidden-import="uvicorn.logging" ^
     --hidden-import="uvicorn.loops" ^
     --hidden-import="uvicorn.loops.auto" ^
