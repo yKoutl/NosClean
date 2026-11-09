@@ -83,15 +83,7 @@
 
     <!-- FIXED SIDEBAR (NUNCA SE MUEVE AL HACER SCROLL) -->
     <aside id="main-sidebar" class="select-none p-2.5">
-        <!-- Header del Sidebar con botón de flecha plegable centrado -->
-        <div class="flex items-center justify-center pb-2 mb-1.5 border-b border-white/10" id="sidebar-header-row">
-            <button onclick="toggleSidebar()" id="sidebar-toggle-btn" title="Plegar / Desplegar Menú"
-                class="w-full flex items-center justify-center py-1.5 px-2 rounded-xl bg-white/10 hover:bg-[#087A45] text-white transition-all cursor-pointer border border-white/10 shadow-sm">
-                <i data-lucide="chevron-left" class="w-4 h-4 text-white" id="sidebar-toggle-icon"></i>
-            </button>
-        </div>
-
-        <!-- Navegación Principal Compacta -->
+        <!-- Navegación Principal Compacta (Inicia directamente arriba sin espacios innecesarios) -->
         <nav class="space-y-1">
             <!-- 1. Consejos y Asesor -->
             <button onclick="switchTab('advisor')" id="tab-btn-advisor" title="Consejos y Asesor de Limpieza"
@@ -181,6 +173,12 @@
             </div>
         </div>
     </aside>
+
+    <!-- Botón pequeño flotante en el centro vertical del borde del sidebar -->
+    <button onclick="toggleSidebar()" id="sidebar-toggle-btn" title="Plegar menú lateral"
+        class="fixed z-50 flex items-center justify-center cursor-pointer transition-all">
+        <i data-lucide="chevron-left" class="w-3.5 h-3.5 text-white" id="sidebar-toggle-icon"></i>
+    </button>
 
     <!-- MAIN SCROLLABLE CONTENT (CON SCROLL FLUIDO INDEPENDIENTE) -->
     <main id="main-content-scroll" class="mt-16">

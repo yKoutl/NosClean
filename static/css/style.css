@@ -281,19 +281,46 @@ body.sidebar-is-collapsed #main-content-scroll {
     color: #FFFFFF !important;
 }
 
-/* Sidebar Toggle Arrow */
-#sidebar-header-row {
-    transition: all 0.2s ease !important;
-}
-
-#main-sidebar.collapsed #sidebar-header-row {
+/* ================== BOTÓN FLOTANTE EN EL MEDIO DEL BORDE ================== */
+#sidebar-toggle-btn {
+    position: fixed !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    left: 237px !important; /* Centrado exactamente sobre el borde de 250px */
+    width: 26px !important;
+    height: 26px !important;
+    border-radius: 9999px !important;
+    background: #102D25 !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
+    color: #FFFFFF !important;
+    display: flex !important;
+    align-items: center !important;
     justify-content: center !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
+    z-index: 50 !important;
+    cursor: pointer !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
+    transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease, transform 0.2s ease !important;
 }
 
-#main-sidebar.collapsed #sidebar-toggle-btn {
-    margin: 0 auto !important;
+#sidebar-toggle-btn:hover {
+    background: #087A45 !important;
+    border-color: #16B84E !important;
+    transform: translateY(-50%) scale(1.15) !important;
+}
+
+/* Cuando el sidebar está colapsado a 68px, el botón se posiciona en 55px */
+#main-sidebar.collapsed ~ #sidebar-toggle-btn,
+body.sidebar-is-collapsed #sidebar-toggle-btn {
+    left: 55px !important;
+}
+
+@media (max-width: 1150px) {
+    #sidebar-toggle-btn {
+        left: 55px !important;
+    }
+    #main-sidebar.manual-expanded ~ #sidebar-toggle-btn {
+        left: 237px !important;
+    }
 }
 
 #main-content-scroll p,
