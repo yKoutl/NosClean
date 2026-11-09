@@ -989,23 +989,26 @@ async function quickOptimizePC() {
     }
 }
 
-// ======================== APAGAR Y SALIR (0 MB DE CONSUMO) ========================
-async function shutdownApp() {
-    if (!confirm('¿Deseas cerrar la aplicación por completo?\n\nDejará de consumir memoria en segundo plano (0 MB). Podrás volver a abrirla cuando quieras desde el acceso directo en tu Escritorio.')) {
-        return;
-    }
-    try {
-        await fetch('/api/system/shutdown', { method: 'POST' });
-    } catch {}
-    document.body.innerHTML = `
-        <div class="h-screen w-screen bg-slate-950 flex flex-col items-center justify-center text-slate-100 p-6 text-center">
-            <div class="h-16 w-16 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-4 shadow-xl">
-                <i data-lucide="power" class="w-8 h-8"></i>
-            </div>
-            <h1 class="text-2xl font-bold text-white mb-2">Aplicación Apagada</h1>
-            <p class="text-slate-400 text-sm max-w-md mb-6">El panel se ha cerrado por completo. Actualmente consume <span class="text-emerald-400 font-bold">0 MB de RAM y 0% de CPU</span>.</p>
-            <p class="text-slate-500 text-xs">Ya puedes cerrar esta pestaña del navegador. Cuando quieras volver a usarla, dale doble clic al icono en tu Escritorio.</p>
-        </div>
-    `;
-    lucide.createIcons();
+// ======================== APAGAR Y SALIR (0 MB DE CONSUMO - CERO VENTANAS NATIVAS) ========================
+function shutdownApp() {
+    openConfirmModal(
+        'Apagar y Salir',
+        '¿Deseas cerrar NosClean por completo? Dejará de consumir memoria y procesador en segundo plano (0 MB). Podrás volver a abrirla cuando quieras desde el acceso directo de tu Escritorio.',
+        async () => {
+            try {
+                await fetch('/api/system/shutdown', { method: 'POST' });
+            } catch {}
+            document.body.innerHTML = `
+                <div class="h-screen w-screen bg-[#F4F7F5] flex flex-col items-center justify-center text-[#102D25] p-6 text-center">
+                    <div class="h-16 w-16 rounded-2xl bg-[#16B84E]/10 border border-[#16B84E]/30 flex items-center justify-center text-[#087A45] mb-4 shadow-sm">
+                        <i data-lucide="power" class="w-8 h-8"></i>
+                    </div>
+                    <h1 class="text-2xl font-black text-[#102D25] mb-2">NosClean Apagado</h1>
+                    <p class="text-[#64748B] text-sm max-w-md mb-6">El panel se ha cerrado por completo. Actualmente consume <span class="text-[#087A45] font-bold">0 MB de RAM y 0% de CPU</span>.</p>
+                    <p class="text-slate-400 text-xs">Ya puedes cerrar esta pestaña del navegador de forma segura. Para volver a iniciar, abre el acceso directo en tu Escritorio.</p>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+    );
 }
