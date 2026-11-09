@@ -190,10 +190,10 @@ async function loadAdvisor() {
 
     if (!data.recommendations || data.recommendations.length === 0) {
         grid.innerHTML = `
-            <div class="col-span-2 glass-card rounded-2xl p-6 text-center text-emerald-400">
-                <i data-lucide="check-circle" class="w-10 h-10 mx-auto mb-2 text-emerald-400"></i>
-                <h4 class="text-base font-bold text-white">¡Tu equipo está en óptimas condiciones!</h4>
-                <p class="text-xs text-slate-400 mt-1">No se detectaron problemas críticos de almacenamiento ni saturación de inicio.</p>
+            <div class="col-span-2 glass-card rounded-2xl p-6 text-center text-[#087A45] border border-slate-200 bg-white shadow-sm">
+                <i data-lucide="check-circle" class="w-10 h-10 mx-auto mb-2 text-[#16B84E]"></i>
+                <h4 class="text-base font-bold text-[#102D25]">¡Tu equipo está en óptimas condiciones!</h4>
+                <p class="text-xs text-[#64748B] mt-1">No se detectaron problemas críticos de almacenamiento ni saturación de inicio.</p>
             </div>
         `;
         lucide.createIcons();
@@ -226,13 +226,13 @@ async function loadAdvisor() {
                     <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${badgeColors[rec.color] || badgeColors.amber}">
                         ${rec.badge}
                     </span>
-                    <span class="text-[11px] uppercase font-semibold text-slate-400">Prioridad ${rec.priority}</span>
+                    <span class="text-[11px] uppercase font-bold text-[#64748B]">Prioridad ${rec.priority}</span>
                 </div>
-                <h4 class="text-base font-bold text-white mt-1">${rec.title}</h4>
-                <p class="text-xs text-slate-300 mt-1.5 leading-relaxed">${rec.description}</p>
+                <h4 class="text-base font-bold text-[#102D25] mt-1">${rec.title}</h4>
+                <p class="text-xs text-[#64748B] mt-1.5 leading-relaxed">${rec.description}</p>
             </div>
-            <div class="mt-4 pt-3 border-t border-slate-700/40 flex justify-end">
-                <button onclick="${actionCall}" class="px-4 py-2 rounded-xl text-xs font-semibold shadow-md flex items-center space-x-1.5 transition-all ${btnColors[rec.color] || btnColors.amber}">
+            <div class="mt-4 pt-3 border-t border-slate-100 flex justify-end">
+                <button onclick="${actionCall}" class="px-4 py-2 rounded-xl text-xs font-semibold shadow-sm flex items-center space-x-1.5 transition-all cursor-pointer ${btnColors[rec.color] || btnColors.amber}">
                     <span>${rec.action_label}</span>
                     <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
                 </button>
@@ -301,41 +301,41 @@ async function loadOverview() {
     drivesContainer.innerHTML = '';
     data.drives.forEach(drive => {
         const isAlert = drive.percent_used > 85;
-        const barColor = isAlert ? 'bg-rose-500' : 'bg-cyan-400';
+        const barColor = isAlert ? 'bg-rose-500' : 'bg-[#16B84E]';
 
         const card = document.createElement('div');
-        card.className = "glass-card rounded-2xl p-5 border border-slate-700/60";
+        card.className = "glass-card rounded-2xl p-5 border border-slate-200 bg-white shadow-sm";
         card.innerHTML = `
             <div class="flex items-center justify-between mb-2">
-                <div class="flex items-center space-x-2">
-                    <span class="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 font-bold text-sm">${drive.device}</span>
+                <div class="flex items-center space-x-2.5">
+                    <span class="p-2 rounded-xl bg-[#F4F7F5] text-[#102D25] font-black text-sm border border-slate-200">${drive.device}</span>
                     <div>
-                        <h4 class="text-sm font-bold text-white">Disco Local (${drive.mountpoint})</h4>
-                        <span class="text-xs text-slate-400 font-mono">${drive.fstype}</span>
+                        <h4 class="text-sm font-bold text-[#102D25]">Disco Local (${drive.mountpoint})</h4>
+                        <span class="text-xs text-[#64748B] font-mono">${drive.fstype}</span>
                     </div>
                 </div>
-                <span class="px-2.5 py-1 rounded-full text-xs font-bold ${isAlert ? 'bg-rose-500/20 text-rose-300' : 'bg-slate-800 text-slate-300'}">
+                <span class="px-2.5 py-1 rounded-full text-xs font-bold ${isAlert ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-[#F4F7F5] text-[#102D25] border border-slate-200'}">
                     ${drive.percent_used}% Usado
                 </span>
             </div>
 
             <div class="mt-4">
-                <div class="flex justify-between text-xs text-slate-300 mb-1.5 font-medium">
-                    <span>Libre: <strong class="text-emerald-400">${drive.free_formatted}</strong></span>
+                <div class="flex justify-between text-xs text-[#64748B] mb-1.5 font-medium">
+                    <span>Libre: <strong class="text-[#087A45] font-bold">${drive.free_formatted}</strong></span>
                     <span>Total: ${drive.total_formatted}</span>
                 </div>
-                <div class="w-full bg-slate-700/50 rounded-full h-3 overflow-hidden">
+                <div class="w-full bg-[#E2E8F0] rounded-full h-3 overflow-hidden">
                     <div class="${barColor} h-3 rounded-full transition-all duration-700" style="width: ${drive.percent_used}%"></div>
                 </div>
             </div>
 
-            <div class="mt-4 pt-3 border-t border-slate-700/40 flex justify-end space-x-2">
-                <button onclick="scanDriveInHeavy('${drive.mountpoint.replace(/\\/g, '\\\\')}')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 border border-slate-700 flex items-center space-x-1 transition-colors">
-                    <i data-lucide="search" class="w-3.5 h-3.5 text-violet-400"></i>
+            <div class="mt-4 pt-3 border-t border-slate-100 flex justify-end space-x-2">
+                <button onclick="scanDriveInHeavy('${drive.mountpoint.replace(/\\/g, '\\\\')}')" class="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-xs font-semibold text-[#102D25] border border-slate-200 flex items-center space-x-1.5 transition-colors shadow-sm cursor-pointer">
+                    <i data-lucide="search" class="w-3.5 h-3.5 text-[#087A45]"></i>
                     <span>Buscar Gigantes</span>
                 </button>
-                <button onclick="openFolderInExplorer('${drive.mountpoint.replace(/\\/g, '\\\\')}')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 border border-slate-700 flex items-center space-x-1 transition-colors">
-                    <i data-lucide="folder" class="w-3.5 h-3.5 text-cyan-400"></i>
+                <button onclick="openFolderInExplorer('${drive.mountpoint.replace(/\\/g, '\\\\')}')" class="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-xs font-semibold text-[#102D25] border border-slate-200 flex items-center space-x-1.5 transition-colors shadow-sm cursor-pointer">
+                    <i data-lucide="folder" class="w-3.5 h-3.5 text-[#087A45]"></i>
                     <span>Abrir en Explorer</span>
                 </button>
             </div>
@@ -366,7 +366,7 @@ async function scanJunk() {
     const statusLabel = document.getElementById('junk-status-label');
     if (btn) btn.disabled = true;
     if (statusLabel) {
-        statusLabel.className = "text-sm font-semibold text-cyan-400 mt-2 flex items-center space-x-1.5";
+        statusLabel.className = "text-sm font-semibold text-[#087A45] mt-2 flex items-center space-x-1.5";
         statusLabel.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Escaneando carpetas temporales...</span>';
         lucide.createIcons();
     }
@@ -497,7 +497,7 @@ async function scanHeavyFiles() {
         <tr>
             <td colspan="5" class="text-center py-12 text-slate-400">
                 <div class="flex flex-col items-center justify-center space-y-3">
-                    <i data-lucide="loader-2" class="w-7 h-7 text-violet-400 animate-spin"></i>
+                    <i data-lucide="loader-2" class="w-7 h-7 text-[#087A45] animate-spin"></i>
                     <span>Analizando carpetas y buscando archivos grandes... Esto puede tardar unos segundos.</span>
                 </div>
             </td>
@@ -534,7 +534,7 @@ async function scanHeavyFiles() {
             <td class="px-4 py-3">
                 <div class="flex items-center space-x-2">
                     <i data-lucide="file" class="w-4 h-4 text-[#087A45] flex-shrink-0"></i>
-                    <span class="font-medium text-white truncate max-w-xs" title="${f.name}">${f.name}</span>
+                    <span class="font-bold text-[#102D25] truncate max-w-xs" title="${f.name}">${f.name}</span>
                 </div>
             </td>
             <td class="px-4 py-3 font-bold text-[#087A45]">${f.size_formatted}</td>
@@ -622,7 +622,7 @@ function renderAppsTable(apps) {
             <td class="px-4 py-3 text-xs text-[#64748B]">${app.install_date}</td>
             <td class="px-4 py-3 text-right">
                 <div class="flex items-center justify-end space-x-2">
-                    <a href="${googleSearchUrl}" target="_blank" title="Buscar información en Google" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors">
+                    <a href="${googleSearchUrl}" target="_blank" title="Buscar información en Google" class="p-1.5 rounded-xl bg-white hover:bg-slate-50 text-[#102D25] border border-slate-200 shadow-sm transition-colors cursor-pointer">
                         <i data-lucide="globe" class="w-3.5 h-3.5"></i>
                     </a>
                     <button onclick="openWindowsTool('appsfeatures')" title="Abrir en Desinstalador de Windows" class="p-1.5 rounded-lg bg-slate-800 hover:bg-blue-600/30 text-blue-400 transition-colors">
@@ -741,7 +741,7 @@ async function scanOrganizer() {
         const row = document.createElement('tr');
         row.className = "hover:bg-slate-50 transition-colors border-b border-slate-100";
         
-        let ageBadge = `<span class="px-2 py-0.5 rounded text-[11px] bg-slate-800 text-slate-300">${f.age_days} días</span>`;
+        let ageBadge = `<span class="px-2 py-0.5 rounded text-[11px] bg-[#F4F7F5] text-[#102D25] border border-slate-200">${f.age_days} días</span>`;
         if (f.age_days >= 90) {
             ageBadge = `<span class="px-2 py-0.5 rounded text-[11px] bg-rose-500/20 text-rose-300 font-semibold">${f.age_days} días (Antiguo)</span>`;
         }
@@ -750,7 +750,7 @@ async function scanOrganizer() {
             <td class="px-4 py-3">
                 <div class="flex items-center space-x-2">
                     <i data-lucide="file" class="w-4 h-4 text-amber-400 flex-shrink-0"></i>
-                    <span class="font-medium text-white max-w-xs truncate" title="${f.name}">${f.name}</span>
+                    <span class="font-bold text-[#102D25] max-w-xs truncate" title="${f.name}">${f.name}</span>
                 </div>
             </td>
             <td class="px-4 py-3">
@@ -819,7 +819,7 @@ async function loadStartupApps() {
         const row = document.createElement('tr');
         row.className = "hover:bg-slate-50 transition-colors border-b border-slate-100";
         row.innerHTML = `
-            <td class="px-4 py-3 font-semibold text-white">
+            <td class="px-4 py-3 font-bold text-[#102D25]">
                 <div class="flex items-center space-x-2">
                     <i data-lucide="zap" class="w-4 h-4 text-emerald-400 flex-shrink-0"></i>
                     <span>${item.name}</span>

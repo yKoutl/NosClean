@@ -72,7 +72,8 @@ header {
     z-index: 40 !important;
     display: flex !important;
     flex-direction: column !important;
-    justify-content: space-between !important;
+    justify-content: flex-start !important;
+    gap: 6px !important;
     background: var(--brand-dark) !important; /* #102D25 */
     border-right: 1px solid rgba(8, 122, 69, 0.35) !important;
     overflow-y: auto !important;
@@ -98,8 +99,15 @@ header {
     transition: all 0.2s ease !important;
 }
 
+.nav-tab i {
+    color: #CBD5E1 !important;
+}
+
 .nav-tab:hover {
     background: rgba(8, 122, 69, 0.35) !important;
+    color: #FFFFFF !important;
+}
+.nav-tab:hover i {
     color: #FFFFFF !important;
 }
 
@@ -111,12 +119,17 @@ header {
 }
 
 .nav-tab.active i {
-    color: #16B84E !important;
+    color: #FFFFFF !important;
 }
 
 .nav-tab.active .nav-badge {
     background: var(--brand-bright) !important;
     color: var(--brand-dark) !important;
+}
+
+/* Sidebar footer pushed to bottom */
+.sidebar-footer {
+    margin-top: auto !important;
 }
 
 /* ================== COLLAPSED STATE ================== */
@@ -230,7 +243,7 @@ body.sidebar-is-collapsed #main-content-scroll {
     transform: translateY(-2px);
 }
 
-/* ================== TIPOGRAFÍA ================== */
+/* ================== TIPOGRAFÍA Y CONTRASTE SEGURO ================== */
 #main-content-scroll h1,
 #main-content-scroll h2,
 #main-content-scroll h3,
@@ -238,21 +251,32 @@ body.sidebar-is-collapsed #main-content-scroll {
     color: var(--brand-dark) !important; /* #102D25 */
 }
 
-/* Botones principales con texto blanco puro 100% visible */
-#main-content-scroll button.bg-\[\#087A45\],
-#main-content-scroll button.bg-emerald-600,
-#main-content-scroll button.bg-rose-600,
-#main-content-scroll button.bg-amber-600,
-#main-content-scroll .btn-primary,
-#btn-quick-optimize {
-    color: #FFFFFF !important;
+/* Evitar texto blanco fantasma en tarjetas blancas */
+#main-content-scroll .glass-card h1,
+#main-content-scroll .glass-card h2,
+#main-content-scroll .glass-card h3,
+#main-content-scroll .glass-card h4,
+#main-content-scroll .glass-panel h1,
+#main-content-scroll .glass-panel h2,
+#main-content-scroll .glass-panel h3,
+#main-content-scroll .glass-panel h4,
+#main-content-scroll .glass-card .text-white,
+#main-content-scroll .glass-panel .text-white {
+    color: var(--brand-dark) !important; /* #102D25 */
 }
 
+/* Botones principales con texto e iconos blanco puro 100% visible */
+#main-content-scroll button.bg-\[\#087A45\],
 #main-content-scroll button.bg-\[\#087A45\] *,
+#main-content-scroll button.bg-emerald-600,
 #main-content-scroll button.bg-emerald-600 *,
+#main-content-scroll button.bg-rose-600,
 #main-content-scroll button.bg-rose-600 *,
+#main-content-scroll button.bg-amber-600,
 #main-content-scroll button.bg-amber-600 *,
+#main-content-scroll .btn-primary,
 #main-content-scroll .btn-primary *,
+#btn-quick-optimize,
 #btn-quick-optimize * {
     color: #FFFFFF !important;
 }
