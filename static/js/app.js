@@ -81,7 +81,7 @@ function switchTab(tabId) {
         if (sec) sec.classList.add('hidden');
         if (btn) {
             if (id === 'guide') {
-                btn.className = "nav-tab flex items-center space-x-3 w-full px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all bg-[#087A45]/20 hover:bg-[#087A45]/35 text-[#16B84E] border border-[#16B84E]/30";
+                btn.className = "nav-tab flex items-center space-x-3 w-full px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all bg-amber-500/15 hover:bg-amber-500/25 text-amber-200 border border-amber-500/35 cursor-pointer";
             } else {
                 btn.className = "nav-tab flex items-center space-x-3 w-full px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-[#087A45]/30 border border-transparent";
             }
@@ -93,7 +93,11 @@ function switchTab(tabId) {
     const activeBtn = document.getElementById(`tab-btn-${tabId}`);
     if (activeSec) activeSec.classList.remove('hidden');
     if (activeBtn) {
-        activeBtn.className = "nav-tab active flex items-center space-x-3 w-full px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all text-white bg-[#087A45] border border-[#16B84E]/50 shadow-md";
+        if (tabId === 'guide') {
+            activeBtn.className = "nav-tab active flex items-center space-x-3 w-full px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all text-white bg-amber-600 border border-amber-400 shadow-md shadow-amber-950/40";
+        } else {
+            activeBtn.className = "nav-tab active flex items-center space-x-3 w-full px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all text-white bg-[#087A45] border border-[#16B84E]/50 shadow-md";
+        }
     }
 
     // Lazy load tab contents if first time
