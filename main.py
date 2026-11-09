@@ -1,4 +1,5 @@
 import os
+import sys
 import uvicorn
 from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.staticfiles import StaticFiles
@@ -20,8 +21,13 @@ app = FastAPI(
     version="5.0.3"
 )
 
-# Servir archivos estáticos
-STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+# Servir archivos estáticos (compatible con empaquetado PyInstaller y ejecución normal)
+if getattr(sys, 'frozen', False):
+    BASE_DIR = sys._MEIPASS
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+STATIC_DIR = os.path.join(BASE_DIR, "static")
 if not os.path.exists(STATIC_DIR):
     os.makedirs(STATIC_DIR, exist_ok=True)
 
@@ -156,5 +162,38 @@ def api_action_open_tool(req: ToolActionRequest):
         raise HTTPException(status_code=400, detail=msg)
     return {"success": True, "message": msg}
 
+def launch_browser():
+    import time, subprocess
+    time.sleep(0.7)
+    url = "http://127.0.0.1:8000"
+    edge_paths = [
+        r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+        r"C:\Program Files\Microsoft\Edge\Application\msedge.exe"
+    ]
+    chrome_paths = [
+        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+        r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
+    ]
+    for p in edge_paths:
+        if os.path.exists(p):
+            subprocess.Popen([p, f"--app={url}", "--window-size=1280,820"])
+            return
+    for p in chrome_paths:
+        if os.path.exists(p):
+            subprocess.Popen([p, f"--app={url}", "--window-size=1280,820"])
+            return
+    import webbrowser
+    webbrowser.open(url)
+
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000, log_level="warning")
+    import socket, threading
+    def is_port_busy(port=8000):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            return s.connect_ex(('127.0.0.1', port)) == 0
+
+    if is_port_busy(8000):
+        launch_browser()
+    else:
+        if getattr(sys, 'frozen', False):
+            threading.Thread(target=launch_browser, daemon=True).start()
+        uvicorn.run(app, host="127.0.0.1", port=8000, log_level="warning")

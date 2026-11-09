@@ -194,39 +194,56 @@ body.sidebar-is-collapsed #main-content-scroll {
 
 /* ================== RESPONSIVE AUTO-ADAPT ================== */
 @media (max-width: 1150px) {
-    #main-sidebar {
+    body.sidebar-is-collapsed #main-sidebar {
         width: 68px !important;
     }
-    #main-sidebar .nav-text,
-    #main-sidebar .nav-badge,
-    #main-sidebar .sidebar-footer {
+    body.sidebar-is-collapsed #main-sidebar .nav-text,
+    body.sidebar-is-collapsed #main-sidebar .nav-badge,
+    body.sidebar-is-collapsed #main-sidebar .sidebar-footer {
         display: none !important;
     }
-    #main-sidebar .nav-tab {
+    body.sidebar-is-collapsed #main-sidebar .nav-tab {
         justify-content: center !important;
         padding-left: 0 !important;
         padding-right: 0 !important;
     }
-    #main-content-scroll {
+    body.sidebar-is-collapsed #main-content-scroll {
         margin-left: 68px !important;
         width: calc(100vw - 68px) !important;
         padding: 1rem !important;
     }
 }
 
-#main-sidebar.manual-expanded {
+/* Sidebar expandido (manual o por defecto): sincroniza perfectamente el margen del contenido */
+#main-sidebar.manual-expanded,
+body:not(.sidebar-is-collapsed) #main-sidebar {
     width: 250px !important;
     box-shadow: 4px 0 24px rgba(16, 45, 37, 0.2) !important;
 }
 #main-sidebar.manual-expanded .nav-text,
 #main-sidebar.manual-expanded .nav-badge,
-#main-sidebar.manual-expanded .sidebar-footer {
+#main-sidebar.manual-expanded .sidebar-footer,
+body:not(.sidebar-is-collapsed) #main-sidebar .nav-text,
+body:not(.sidebar-is-collapsed) #main-sidebar .nav-badge,
+body:not(.sidebar-is-collapsed) #main-sidebar .sidebar-footer {
     display: block !important;
 }
-#main-sidebar.manual-expanded .nav-tab {
+#main-sidebar.manual-expanded .nav-tab,
+body:not(.sidebar-is-collapsed) #main-sidebar .nav-tab {
     justify-content: flex-start !important;
     padding-left: 0.75rem !important;
     padding-right: 0.75rem !important;
+}
+
+#main-sidebar.manual-expanded ~ #main-content-scroll,
+body:not(.sidebar-is-collapsed) #main-content-scroll {
+    margin-left: 250px !important;
+    width: calc(100vw - 250px) !important;
+}
+
+#main-sidebar.manual-expanded ~ #sidebar-toggle-btn,
+body:not(.sidebar-is-collapsed) #sidebar-toggle-btn {
+    left: 237px !important;
 }
 
 /* ================== CARDS Y PANELES (BLANCO #FFFFFF) ================== */

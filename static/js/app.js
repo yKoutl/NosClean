@@ -27,7 +27,10 @@ async function initApp() {
         splash.style.pointerEvents = 'none';
         setTimeout(() => {
             if (splash.parentNode) splash.parentNode.removeChild(splash);
+            checkWelcomeModal();
         }, 400);
+    } else {
+        checkWelcomeModal();
     }
 }
 
@@ -53,6 +56,7 @@ function applySidebarState() {
     const sidebar = document.getElementById('main-sidebar');
     const toggleIcon = document.getElementById('sidebar-toggle-icon');
     const toggleBtn = document.getElementById('sidebar-toggle-btn');
+    const mainContent = document.getElementById('main-content-scroll');
     const body = document.body;
 
     if (!sidebar) return;
@@ -61,12 +65,20 @@ function applySidebarState() {
         sidebar.classList.add('collapsed');
         sidebar.classList.remove('manual-expanded');
         body.classList.add('sidebar-is-collapsed');
+        if (mainContent) {
+            mainContent.style.marginLeft = '68px';
+            mainContent.style.width = 'calc(100vw - 68px)';
+        }
         if (toggleIcon) toggleIcon.setAttribute('data-lucide', 'chevron-right');
         if (toggleBtn) toggleBtn.title = "Expandir menú lateral";
     } else {
         sidebar.classList.remove('collapsed');
         sidebar.classList.add('manual-expanded');
         body.classList.remove('sidebar-is-collapsed');
+        if (mainContent) {
+            mainContent.style.marginLeft = '250px';
+            mainContent.style.width = 'calc(100vw - 250px)';
+        }
         if (toggleIcon) toggleIcon.setAttribute('data-lucide', 'chevron-left');
         if (toggleBtn) toggleBtn.title = "Plegar menú lateral";
     }
@@ -967,6 +979,49 @@ function closeConfirmModal(confirmed) {
     }
     pendingModalAction = null;
 }
+
+// ======================== MODAL DE BIENVENIDA (ONBOARDING) ========================
+function checkWelcomeModal() {
+    const dismissed = localStorage.getItem('nosclean_welcome_dismissed');
+    if (!dismissed) {
+        setTimeout(() => {
+            showWelcomeModal();
+        }, 300);
+    }
+}
+
+function showWelcomeModal() {
+    const modal = document.getElementById('welcome-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        lucide.createIcons();
+    }
+}
+
+function closeWelcomeModal() {
+    const modal = document.getElementById('welcome-modal');
+    const dontShow = document.getElementById('welcome-dont-show');
+    if (dontShow && dontShow.checked) {
+        localStorage.setItem('nosclean_welcome_dismissed', 'true');
+    }
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+// Escuchar tecla ESC para cerrar cualquier modal abierto
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const welcomeModal = document.getElementById('welcome-modal');
+        if (welcomeModal && !welcomeModal.classList.contains('hidden')) {
+            closeWelcomeModal();
+        }
+        const confirmModal = document.getElementById('confirm-modal');
+        if (confirmModal && !confirmModal.classList.contains('hidden')) {
+            closeConfirmModal(false);
+        }
+    }
+});
 
 function showToast(message, type = 'info') {
     const container = document.getElementById('toast-container');

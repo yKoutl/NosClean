@@ -19,9 +19,12 @@ Function IsServerRunning()
     On Error GoTo 0
 End Function
 
+Dim scriptDir
+scriptDir = fso.GetParentFolderName(WScript.ScriptFullName)
+
 ' Si el servidor no esta activo, arrancarlo con pythonw de forma 100% invisible (sin consola)
 If Not IsServerRunning() Then
-    WshShell.Run "pythonw.exe ""D:\PROYECTOS\limpiar pc\main.py""", 0, False
+    WshShell.Run "pythonw.exe """ & scriptDir & "\main.py""", 0, False
     
     ' Esperar silenciosamente hasta que el servidor responda
     Dim i

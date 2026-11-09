@@ -1,4 +1,4 @@
 @echo off
-cd /d "D:\PROYECTOS\limpiar pc"
-start "" wscript.exe "D:\PROYECTOS\limpiar pc\iniciar_panel.vbs"
+cd /d "%~dp0"
+start "" wscript.exe "%~dp0iniciar_panel.vbs"
 exit

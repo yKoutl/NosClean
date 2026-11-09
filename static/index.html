@@ -1104,6 +1104,10 @@
                             <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-[#087A45] border border-emerald-200">
                                 100% Local (Sin Telemetría)
                             </span>
+                            <button onclick="showWelcomeModal()" class="px-3 py-0.5 rounded-full text-xs font-bold bg-white text-[#087A45] border border-emerald-300 hover:bg-emerald-50 transition-colors flex items-center space-x-1 cursor-pointer shadow-sm">
+                                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                                <span>Ver Bienvenida</span>
+                            </button>
                         </div>
                         <h1 class="text-2xl sm:text-3xl font-black text-[#102D25] tracking-tight">NosClean</h1>
                         <p class="text-xs sm:text-sm text-[#64748B] max-w-2xl font-medium leading-relaxed">
@@ -1250,8 +1254,78 @@
         </div>
     </div>
 
+    <!-- Welcome Modal (Onboarding primera vez con opción de no volver a mostrar) -->
+    <div id="welcome-modal"
+        class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="glass-panel bg-white rounded-2xl max-w-lg w-full p-6 sm:p-7 border border-slate-200 shadow-2xl relative">
+            <!-- Botón cerrar (X) en esquina -->
+            <button onclick="closeWelcomeModal()" class="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer" title="Cerrar">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
 
-    <script src="/static/js/app.js?v=12"></script>
+            <!-- Cabecera -->
+            <div class="flex items-center space-x-3.5 mb-4">
+                <div class="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center p-2 flex-shrink-0 shadow-sm">
+                    <img src="/static/favicon.png" alt="NosClean" class="w-8 h-8 object-contain">
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <h3 class="text-lg sm:text-xl font-black text-[#102D25]">¡Bienvenido a NosClean!</h3>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-[#087A45] border border-emerald-300">v5.0.3</span>
+                    </div>
+                    <p class="text-xs text-[#64748B] mt-0.5">Suite de optimización, limpieza segura y aceleración para Windows</p>
+                </div>
+            </div>
+
+            <!-- 3 Características Clave -->
+            <div class="space-y-2.5 my-5">
+                <div class="flex items-start space-x-3 p-3 rounded-xl bg-[#F4F7F5] border border-slate-200">
+                    <div class="p-1.5 rounded-lg bg-emerald-100 text-[#087A45] mt-0.5 flex-shrink-0">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-[#087A45]"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-[#102D25]">100% Local y Privado</h4>
+                        <p class="text-[11px] text-[#64748B] mt-0.5">Cero telemetría ni servidores remotos. Toda la auditoría se procesa localmente en tu computadora.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start space-x-3 p-3 rounded-xl bg-[#F4F7F5] border border-slate-200">
+                    <div class="p-1.5 rounded-lg bg-emerald-100 text-[#087A45] mt-0.5 flex-shrink-0">
+                        <i data-lucide="sparkles" class="w-4 h-4 text-[#087A45]"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-[#102D25]">Limpieza Inteligente con Criterio</h4>
+                        <p class="text-[11px] text-[#64748B] mt-0.5">Elimina cachés huérfanas, temporales de instaladores y basura de navegadores protegiendo tus datos clave.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start space-x-3 p-3 rounded-xl bg-[#F4F7F5] border border-slate-200">
+                    <div class="p-1.5 rounded-lg bg-emerald-100 text-[#087A45] mt-0.5 flex-shrink-0">
+                        <i data-lucide="zap" class="w-4 h-4 text-[#087A45]"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-[#102D25]">Cero Residuos en Memoria</h4>
+                        <p class="text-[11px] text-[#64748B] mt-0.5">Sin servicios pesados en segundo plano. Cuando cierras la aplicación, el uso de RAM vuelve a 0 MB.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer: Checkbox 'No volver a mostrar' + Botón Comenzar -->
+            <div class="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <label class="flex items-center space-x-2 text-xs text-[#64748B] cursor-pointer select-none">
+                    <input type="checkbox" id="welcome-dont-show" class="w-4 h-4 rounded text-[#087A45] focus:ring-[#16B84E] border-slate-300">
+                    <span>No volver a mostrar al iniciar</span>
+                </label>
+                <button onclick="closeWelcomeModal()"
+                    class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#087A45] hover:bg-[#065F35] text-white text-xs sm:text-sm font-bold shadow-md transition-all flex items-center justify-center space-x-1.5 cursor-pointer">
+                    <span>Comenzar</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js?v=13"></script>
     <script>
         lucide.createIcons();
     </script>
