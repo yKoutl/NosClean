@@ -63,20 +63,22 @@ NosClean es una suite de mantenimiento, optimización y organización inteligent
 
 ---
 
-## 2. Marco Legal, Derechos de Autor y Licencia
+## 2. Marco Legal, Derechos de Autor y Licencia de Código Abierto
 
-### 2.1 Propiedad Intelectual y Derechos Reservados
-El software **NosClean**, incluyendo su código fuente, interfaz visual, estructura lógica, estilos gráficos, logotipos, íconos y documentación técnica, está protegido por las leyes de propiedad intelectual y derechos de autor internacionales.
+### 2.1 Naturaleza de Código Abierto y Derechos Reservados
+El software **NosClean** es un proyecto de **Código Abierto (Open Source)**. Su diseño visual, funciones, logotipos, íconos y documentación técnica están protegidos por las leyes vigentes de propiedad intelectual y tratados internacionales de derechos de autor.
 
 **Copyright © 2026 NosClean Software. Todos los derechos reservados.**
 
-### 2.2 Licencia de Uso
-Se otorga al usuario una licencia no exclusiva, intransferible y revocable para utilizar NosClean con fines personales, profesionales y corporativos para el mantenimiento y diagnóstico de sus propios equipos informáticos.
+### 2.2 Licencia de Uso y Auditoría
+Al ser software de **código abierto**, cualquier persona u organización tiene la libertad de inspeccionar, estudiar y verificar que la herramienta es 100% transparente, segura, libre de publicidad y sin ningún tipo de software espía o telemetría.
 
-**Queda estrictamente prohibido:**
-- Realizar ingeniería inversa, descompilación o desensamblado con el propósito de crear herramientas maliciosas.
-- Distribuir versiones alteradas del software que supriman las protecciones de seguridad o los avisos de autoría.
-- Cobrar tarifas o suscripciones por la distribución de copias del software sin autorización expresa.
+Se otorga al usuario una licencia para utilizar NosClean con fines personales, profesionales y corporativos para el mantenimiento y diagnóstico de sus propios equipos informáticos.
+
+**Condiciones de uso:**
+- No alterar las firmas de autoría original en redistribuciones.
+- No utilizar el código para el desarrollo o distribución de malware o herramientas perjudiciales.
+- Uso libre para particulares, empresas e instituciones educativas.
 
 ---
 
@@ -102,3 +104,4 @@ NosClean incluye protecciones internas de software para evitar daños accidental
 El software se distribuye «tal cual» (*as-is*), sin garantías expresas o implícitas respecto a idoneidad para un propósito particular. Aunque NosClean se somete a rigurosas pruebas automatizadas de integridad de 38 niveles, el usuario final es el único responsable de verificar los archivos que decide eliminar o mover, especialmente al vaciar la Papelera de Reciclaje o eliminar archivos pesados personales.
 
 En ningún caso los desarrolladores de NosClean serán responsables por pérdida incidental de datos o interrupciones derivadas del uso incorrecto de las herramientas de desinstalación de Windows o de la eliminación manual de archivos por parte del usuario.
+

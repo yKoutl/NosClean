@@ -80,7 +80,11 @@ function switchTab(tabId) {
         const btn = document.getElementById(`tab-btn-${id}`);
         if (sec) sec.classList.add('hidden');
         if (btn) {
-            btn.className = "nav-tab flex items-center space-x-3 w-full px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-[#087A45]/30 border border-transparent";
+            if (id === 'guide') {
+                btn.className = "nav-tab flex items-center space-x-3 w-full px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all bg-[#087A45]/20 hover:bg-[#087A45]/35 text-[#16B84E] border border-[#16B84E]/30";
+            } else {
+                btn.className = "nav-tab flex items-center space-x-3 w-full px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-[#087A45]/30 border border-transparent";
+            }
         }
     });
 
