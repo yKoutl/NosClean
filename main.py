@@ -29,9 +29,17 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 @app.get("/favicon.ico")
 def get_favicon():
-    # Retorna un icono SVG transparente o minimalista
-    svg_icon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#06b6d4"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>'
-    return Response(content=svg_icon, media_type="image/svg+xml")
+    fav_file = os.path.join(STATIC_DIR, "favicon.ico")
+    if os.path.exists(fav_file):
+        return FileResponse(fav_file, media_type="image/x-icon")
+    return Response(status_code=404)
+
+@app.get("/manifest.json")
+def get_manifest():
+    manifest_file = os.path.join(STATIC_DIR, "manifest.json")
+    if os.path.exists(manifest_file):
+        return FileResponse(manifest_file, media_type="application/manifest+json")
+    return Response(status_code=404)
 
 @app.get("/")
 def read_root():

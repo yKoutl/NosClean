@@ -9,13 +9,21 @@ sOutput = oExec.StdOut.ReadAll()
 If InStr(sOutput, "LISTENING") = 0 Then
     ' Iniciar backend FastAPI de forma 100% oculta en segundo plano (sin ventana CMD)
     WshShell.Run "cmd /c cd /d ""D:\PROYECTOS\limpiar pc"" && python main.py", 0, False
-    WScript.Sleep 1500
+    
+    ' Polling activo de puerto: abre inmediatamente al responder (max 2 segs)
+    Dim attempt
+    For attempt = 1 To 20
+        WScript.Sleep 100
+        Set oExec = WshShell.Exec("cmd /c netstat -ano | findstr :8000 | findstr LISTENING")
+        If InStr(oExec.StdOut.ReadAll(), "LISTENING") > 0 Then Exit For
+    Next
 End If
 
 ' Buscar navegador instalado para abrir como VENTANA DE APLICACIÓN DE ESCRITORIO DEDICADA
-' (Sin barra de direcciones, sin pestanas, sin marcadores: experiencia 100% programa de escritorio)
-Dim appUrl, edgePath, chromePath, appOpened
+' Con perfil independiente para fijar icono corporativo en barra de tareas de Windows
+Dim appUrl, profileDir, edgePath, chromePath, appOpened
 appUrl = "http://127.0.0.1:8000"
+profileDir = "D:\PROYECTOS\limpiar pc\.nosclean_profile"
 appOpened = False
 
 edgePath = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
@@ -29,10 +37,10 @@ If Not fso.FileExists(chromePath) Then
 End If
 
 If fso.FileExists(edgePath) Then
-    WshShell.Run """" & edgePath & """ --app=""" & appUrl & """ --window-size=1280,820", 1, False
+    WshShell.Run """" & edgePath & """ --user-data-dir=""" & profileDir & """ --app=""" & appUrl & """ --window-size=1280,820", 1, False
     appOpened = True
 ElseIf fso.FileExists(chromePath) Then
-    WshShell.Run """" & chromePath & """ --app=""" & appUrl & """ --window-size=1280,820", 1, False
+    WshShell.Run """" & chromePath & """ --user-data-dir=""" & profileDir & """ --app=""" & appUrl & """ --window-size=1280,820", 1, False
     appOpened = True
 End If
 

@@ -19,6 +19,16 @@ async function initApp() {
     loadOverview();
     // Auto-refresh metrics every 20 seconds
     setInterval(updateQuickMetrics, 20000);
+
+    // Ocultar y remover suavemente el Splash Loader (Capa 4: Cero Pantallas Blancas)
+    const splash = document.getElementById('nosclean-splash-loader');
+    if (splash) {
+        splash.style.opacity = '0';
+        splash.style.pointerEvents = 'none';
+        setTimeout(() => {
+            if (splash.parentNode) splash.parentNode.removeChild(splash);
+        }, 400);
+    }
 }
 
 // ======================== SIDEBAR TOGGLE & PERSISTENCE ========================

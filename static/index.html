@@ -8,6 +8,13 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <link rel="icon" type="image/png" href="/static/favicon.png">
+    <link rel="apple-touch-icon" href="/static/icon-192.png">
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#102D25">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="NosClean">
     <title>NosClean </title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -41,6 +48,45 @@
 </head>
 
 <body class="h-screen w-screen overflow-hidden antialiased">
+
+    <!-- ==================== SPLASH SCREEN LOADER (0ms Pantalla Blanca) ==================== -->
+    <div id="nosclean-splash-loader" style="
+        position: fixed;
+        inset: 0;
+        background: #102D25;
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+        transition: opacity 0.4s ease, visibility 0.4s ease;
+    ">
+        <div style="position: relative; margin-bottom: 22px;">
+            <img src="/static/favicon.png" alt="NosClean" style="width: 84px; height: 84px; border-radius: 22px; box-shadow: 0 12px 30px rgba(0,0,0,0.35); border: 2px solid rgba(22, 184, 78, 0.45); object-fit: contain;">
+        </div>
+        <h1 style="color: #FFFFFF; font-size: 26px; font-weight: 800; margin: 0 0 6px 0; letter-spacing: -0.5px;">NosClean</h1>
+        <p style="color: #16B84E; font-size: 13px; font-weight: 600; margin: 0 0 22px 0;">Iniciando auditoría y optimización...</p>
+        <div style="width: 210px; height: 5px; background: rgba(255,255,255,0.12); border-radius: 999px; overflow: hidden; position: relative;">
+            <div style="
+                position: absolute;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                background: #16B84E;
+                border-radius: 999px;
+                animation: nosclean-loading 1.2s infinite ease-in-out;
+            "></div>
+        </div>
+        <span style="color: #94A3B8; font-size: 11px; margin-top: 16px; font-weight: 600;">Versión 5.0.3 &middot; 100% Local</span>
+    </div>
+    <style>
+        @keyframes nosclean-loading {
+            0% { left: 0%; width: 0%; }
+            50% { left: 25%; width: 60%; }
+            100% { left: 100%; width: 0%; }
+        }
+    </style>
 
     <!-- Top Navigation Header (100% Fixed at Top) -->
     <header
