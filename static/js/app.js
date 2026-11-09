@@ -110,7 +110,17 @@ function switchTab(tabId) {
 
 function refreshCurrentTab() {
     const icon = document.getElementById('refresh-icon');
-    if (icon) icon.classList.add('animate-spin');
+    if (icon) {
+        icon.style.transition = 'transform 0.6s ease';
+        icon.style.transform = 'rotate(360deg)';
+        setTimeout(() => {
+            const el = document.getElementById('refresh-icon');
+            if (el) {
+                el.style.transition = 'none';
+                el.style.transform = '';
+            }
+        }, 600);
+    }
 
     if (currentTab === 'advisor') loadAdvisor();
     else if (currentTab === 'overview') loadOverview();
@@ -119,10 +129,6 @@ function refreshCurrentTab() {
     else if (currentTab === 'apps') loadInstalledApps();
     else if (currentTab === 'organizer') scanOrganizer();
     else if (currentTab === 'startup') loadStartupAndProcs();
-
-    setTimeout(() => {
-        if (icon) icon.classList.remove('animate-spin');
-    }, 800);
 }
 
 // ======================== API HELPERS ========================
@@ -960,7 +966,7 @@ async function quickOptimizePC() {
         btn.classList.add('opacity-75', 'cursor-wait');
     }
     if (label) label.innerText = 'Optimizando...';
-    if (icon) icon.classList.add('animate-spin');
+    if (icon) icon.classList.add('animate-pulse');
 
     showToast('Iniciando optimización rápida (liberando RAM inactiva y cachés)...', 'info');
 
@@ -990,7 +996,10 @@ async function quickOptimizePC() {
             btn.classList.remove('opacity-75', 'cursor-wait');
         }
         if (label) label.innerText = 'Optimizar PC';
-        if (icon) icon.classList.remove('animate-spin');
+        if (icon) {
+            icon.classList.remove('animate-pulse');
+            icon.classList.remove('animate-spin');
+        }
         lucide.createIcons();
     }
 }
