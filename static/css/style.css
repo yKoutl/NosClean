@@ -234,9 +234,42 @@ body.sidebar-is-collapsed #main-content-scroll {
 #main-content-scroll h1,
 #main-content-scroll h2,
 #main-content-scroll h3,
-#main-content-scroll h4,
-#main-content-scroll .text-white {
+#main-content-scroll h4 {
     color: var(--brand-dark) !important; /* #102D25 */
+}
+
+/* Botones principales con texto blanco puro 100% visible */
+#main-content-scroll button.bg-\[\#087A45\],
+#main-content-scroll button.bg-emerald-600,
+#main-content-scroll button.bg-rose-600,
+#main-content-scroll button.bg-amber-600,
+#main-content-scroll .btn-primary,
+#btn-quick-optimize {
+    color: #FFFFFF !important;
+}
+
+#main-content-scroll button.bg-\[\#087A45\] *,
+#main-content-scroll button.bg-emerald-600 *,
+#main-content-scroll button.bg-rose-600 *,
+#main-content-scroll button.bg-amber-600 *,
+#main-content-scroll .btn-primary *,
+#btn-quick-optimize * {
+    color: #FFFFFF !important;
+}
+
+/* Sidebar Toggle Arrow */
+#sidebar-header-row {
+    transition: all 0.2s ease !important;
+}
+
+#main-sidebar.collapsed #sidebar-header-row {
+    justify-content: center !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+#main-sidebar.collapsed #sidebar-toggle-btn {
+    margin: 0 auto !important;
 }
 
 #main-content-scroll p,

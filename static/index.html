@@ -35,66 +35,62 @@
     </script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="/static/css/style.css?v=10">
+    <link rel="stylesheet" href="/static/css/style.css?v=12">
 </head>
 
 <body class="h-screen w-screen overflow-hidden antialiased">
 
     <!-- Top Navigation Header (100% Fixed at Top) -->
     <header
-        class="h-16 w-full fixed top-0 left-0 z-50 bg-white border-b border-slate-200 px-3 sm:px-6 flex items-center justify-between shadow-sm">
-        <div class="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
-            <!-- Botón Desplegable / Plegable del Sidebar -->
-            <button onclick="toggleSidebar()" id="sidebar-toggle-btn" title="Plegar / Desplegar Menú Lateral"
-                class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-[#087A45] transition-all shadow-sm flex-shrink-0 cursor-pointer">
-                <i data-lucide="panel-left-close" class="w-5 h-5" id="sidebar-toggle-icon"></i>
-                <span class="text-xs font-bold hidden md:inline" id="sidebar-toggle-label">Menú</span>
-            </button>
-
-            <!-- Brand Logo & Title -->
-            <div class="flex items-center space-x-2.5 flex-shrink-0">
-                <img src="/static/logo.png" alt="NosClean Logo" class="h-9 w-9 object-contain drop-shadow-sm">
-                <div class="min-w-0">
-                    <h1
-                        class="text-base sm:text-lg font-extrabold text-[#102D25] tracking-tight leading-none truncate flex items-center gap-1.5">
-                        NosClean
-                        <span
-                            class="px-1.5 py-0.5 rounded text-[10px] font-black bg-[#16B84E]/15 text-[#087A45] border border-[#16B84E]/30">PC</span>
-                    </h1>
-                    <p class="text-[10px] sm:text-[11px] text-[#64748B] mt-0.5 hidden lg:block truncate font-medium">
-                        Auditoría inteligente, optimización y limpieza</p>
-                </div>
+        class="h-16 w-full fixed top-0 left-0 z-50 bg-white border-b border-slate-200 px-4 sm:px-8 flex items-center justify-between shadow-sm">
+        <!-- Brand Logo & Title (Sin menú ni PC) -->
+        <div class="flex items-center space-x-3 flex-shrink-0">
+            <img src="/static/logo.png" alt="NosClean Logo" class="h-10 w-10 object-contain drop-shadow-sm">
+            <div class="min-w-0">
+                <h1 class="text-lg font-black text-[#102D25] tracking-tight leading-none">NosClean</h1>
+                <p class="text-[11px] text-[#64748B] mt-0.5 hidden sm:block truncate font-medium">
+                    Auditoría inteligente, optimización y limpieza</p>
             </div>
         </div>
 
         <!-- Quick Status Pills -->
-        <div class="flex items-center space-x-2 text-xs flex-shrink-0">
+        <div class="flex items-center space-x-2.5 text-xs flex-shrink-0 pr-1">
             <!-- BOTON DESTACADO: OPTIMIZAR PC EN 1 CLIC -->
             <button onclick="quickOptimizePC()" id="btn-quick-optimize"
                 title="Optimizar PC en 1 Clic (Liberar memoria RAM inactiva y caches)"
                 class="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-[#087A45] hover:bg-[#066237] text-white font-extrabold shadow-sm shadow-[#087A45]/30 transition-all transform active:scale-95 cursor-pointer">
                 <i data-lucide="zap" class="w-4 h-4 text-[#16B84E] fill-[#16B84E]" id="optimize-icon"></i>
-                <span class="text-xs font-black tracking-wide" id="optimize-label">Optimizar PC</span>
+                <span class="text-xs font-black tracking-wide text-white" id="optimize-label">Optimizar PC</span>
             </button>
 
             <div id="status-user-pill"
-                class="hidden sm:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-full bg-[#F4F7F5] border border-slate-300 text-[#102D25] font-medium max-w-[170px] truncate">
+                class="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-[#F4F7F5] border border-slate-300 text-[#102D25] font-medium max-w-[170px] truncate">
                 <i data-lucide="user" class="w-3.5 h-3.5 text-[#087A45] flex-shrink-0"></i>
                 <span id="pill-user" class="truncate">Cargando...</span>
             </div>
             <div id="status-uptime-pill"
-                class="hidden md:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-full bg-[#F4F7F5] border border-slate-300 text-[#102D25] font-medium">
+                class="hidden md:flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-[#F4F7F5] border border-slate-300 text-[#102D25] font-medium">
                 <i data-lucide="clock" class="w-3.5 h-3.5 text-[#16B84E]"></i>
                 <span id="pill-uptime">--</span>
             </div>
             <button onclick="refreshCurrentTab()" title="Actualizar datos"
-                class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-[#102D25] transition-colors cursor-pointer">
+                class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-[#087A45] transition-colors cursor-pointer flex-shrink-0">
                 <i data-lucide="refresh-cw" class="w-4 h-4 text-[#087A45]" id="refresh-icon"></i>
             </button>
         </div>
     </header>
+
     <!-- FIXED SIDEBAR (NUNCA SE MUEVE AL HACER SCROLL) -->
     <aside id="main-sidebar" class="select-none p-2.5">
+        <!-- Header del Sidebar con botón de flecha plegable -->
+        <div class="flex items-center justify-between pb-2 mb-2 border-b border-white/10 px-1" id="sidebar-header-row">
+            <span class="text-[11px] font-bold text-slate-300 uppercase tracking-wider nav-text">Menú</span>
+            <button onclick="toggleSidebar()" id="sidebar-toggle-btn" title="Plegar / Desplegar Menú"
+                class="p-1.5 rounded-lg bg-white/10 hover:bg-[#087A45] text-slate-200 hover:text-white transition-all cursor-pointer border border-white/10 shadow-sm ml-auto">
+                <i data-lucide="chevron-left" class="w-4 h-4 text-white" id="sidebar-toggle-icon"></i>
+            </button>
+        </div>
+
         <!-- Navegación Principal Compacta -->
         <nav class="space-y-1">
             <!-- 1. Consejos y Asesor -->
@@ -196,9 +192,11 @@
             <div class="glass-panel rounded-2xl p-4 sm:p-6 border border-amber-500/30">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div class="flex items-center space-x-3.5 sm:space-x-4 min-w-0">
-                        <div
-                            class="h-14 w-14 sm:h-16 sm:w-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center flex-shrink-0 shadow-lg shadow-amber-500/10">
-                            <span class="text-2xl sm:text-3xl font-black text-amber-400" id="advisor-score">--</span>
+                        <div class="h-16 px-4 rounded-2xl bg-[#16B84E]/10 border border-[#16B84E]/30 flex items-center justify-center flex-shrink-0 shadow-sm min-w-[125px]">
+                            <div class="flex items-baseline space-x-0.5">
+                                <span class="text-2xl sm:text-3xl font-black text-[#16B84E]" id="advisor-score">--</span>
+                                <span class="text-base font-bold text-[#087A45]">/100</span>
+                            </div>
                         </div>
                         <div class="min-w-0 flex-1">
                             <div class="flex items-center space-x-2 flex-wrap gap-y-1">
@@ -849,7 +847,7 @@
     </div>
 
 
-    <script src="/static/js/app.js?v=10"></script>
+    <script src="/static/js/app.js?v=12"></script>
     <script>
         lucide.createIcons();
     </script>
