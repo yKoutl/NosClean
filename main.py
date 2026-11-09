@@ -15,9 +15,9 @@ from app.advisor import generate_pc_advice
 from app.utils import open_in_explorer, recycle_path, open_windows_app
 
 app = FastAPI(
-    title="PC Master Cleaner & Auditor",
+    title="NosClean",
     description="Panel integral para auditar, limpiar y organizar tu PC en Windows.",
-    version="1.0.0"
+    version="5.0.3"
 )
 
 # Servir archivos estáticos

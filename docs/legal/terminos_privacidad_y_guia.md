@@ -1,6 +1,6 @@
 # Manual de Uso, Términos de Servicio y Marco Legal de NosClean
 
-**Versión:** 2.0  
+**Versión:** 5.0.3  
 **Fecha de actualización:** Noviembre 2026  
 **Entorno:** Windows 10 / Windows 11 (64-bit)  
 **Titular:** NosClean Software  
