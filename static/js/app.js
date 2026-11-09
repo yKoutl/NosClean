@@ -731,7 +731,12 @@ async function scanOrganizer() {
     document.getElementById('organizer-files-count').textContent = `${data.total_files} archivos sueltos (${data.total_size_formatted})`;
 
     if (!data.files || data.files.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-emerald-400">🎉 ¡Carpeta impecable! No hay archivos sueltos para organizar.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-10">
+            <div class="flex items-center justify-center space-x-2 text-[#087A45] font-bold text-sm">
+                <i data-lucide="check-circle" class="w-5 h-5 text-[#087A45]"></i>
+                <span>Carpeta limpia y ordenada. No hay archivos sueltos pendientes de organizar.</span>
+            </div>
+        </td></tr>`;
         lucide.createIcons();
         return;
     }
@@ -743,25 +748,26 @@ async function scanOrganizer() {
         
         let ageBadge = `<span class="px-2 py-0.5 rounded text-[11px] bg-[#F4F7F5] text-[#102D25] border border-slate-200">${f.age_days} días</span>`;
         if (f.age_days >= 90) {
-            ageBadge = `<span class="px-2 py-0.5 rounded text-[11px] bg-rose-500/20 text-rose-300 font-semibold">${f.age_days} días (Antiguo)</span>`;
+            ageBadge = `<span class="px-2 py-0.5 rounded text-[11px] bg-rose-500/20 text-rose-700 font-semibold">${f.age_days} días (Antiguo)</span>`;
         }
 
         row.innerHTML = `
             <td class="px-4 py-3">
                 <div class="flex items-center space-x-2">
-                    <i data-lucide="file" class="w-4 h-4 text-amber-400 flex-shrink-0"></i>
+                    <i data-lucide="file" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i>
                     <span class="font-bold text-[#102D25] max-w-xs truncate" title="${f.name}">${f.name}</span>
                 </div>
             </td>
             <td class="px-4 py-3">
-                <span class="px-2 py-1 rounded-lg text-xs font-medium bg-amber-500/10 text-amber-300 border border-amber-500/20">
-                    📁 ${f.category}
+                <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-[#087A45] border border-emerald-200 inline-flex items-center space-x-1">
+                    <i data-lucide="folder" class="w-3.5 h-3.5 text-[#087A45]"></i>
+                    <span>${f.category}</span>
                 </span>
             </td>
-            <td class="px-4 py-3 text-xs font-bold text-slate-300">${f.size_formatted}</td>
+            <td class="px-4 py-3 text-xs font-bold text-[#102D25]">${f.size_formatted}</td>
             <td class="px-4 py-3 text-xs">${ageBadge}</td>
             <td class="px-4 py-3 text-right">
-                <button onclick="openFolderInExplorer('${f.path.replace(/\\/g, '\\\\')}')" title="Ver archivo" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 transition-colors">
+                <button onclick="openFolderInExplorer('${f.path.replace(/\\/g, '\\\\')}')" title="Ver archivo" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-[#087A45] border border-slate-300 transition-colors">
                     <i data-lucide="folder" class="w-4 h-4"></i>
                 </button>
             </td>
@@ -966,7 +972,7 @@ async function quickOptimizePC() {
             const ramText = data.ram_freed_formatted || '0 B';
             const diskText = data.disk_freed_formatted || '0 B';
             
-            showToast(`🚀 ¡Optimizado! Se liberaron ${ramText} de RAM y ${diskText} de disco. Nueva RAM: ${data.new_ram_used_gb} GB (${data.new_ram_percent}%).`, 'success');
+            showToast(`Optimización completada. Se liberaron ${ramText} de RAM y ${diskText} de disco. Nueva RAM: ${data.new_ram_used_gb} GB (${data.new_ram_percent}%).`, 'success');
             
             // Refrescar métricas de inmediato
             await loadOverview();
