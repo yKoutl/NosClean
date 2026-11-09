@@ -1164,10 +1164,10 @@
                             <h3 class="text-base font-bold text-[#102D25]">Autor y Créditos</h3>
                         </div>
                         <div class="text-xs text-[#1E3A34] leading-relaxed space-y-2.5">
-                            <div class="p-3 rounded-xl bg-[#F4F7F5] border border-slate-200">
+                            <div class="p-3.5 rounded-xl bg-[#F4F7F5] border border-slate-200">
                                 <span class="text-[11px] font-bold text-[#64748B] uppercase tracking-wider block">Desarrollador y Creador</span>
-                                <span class="text-base font-black text-[#102D25] block mt-0.5">RQ</span>
-                                <a href="mailto:raulquintanazinc@gmail.com" class="text-xs text-[#087A45] font-semibold hover:underline flex items-center space-x-1.5 mt-1">
+                                <span class="text-base font-black text-[#102D25] block mt-1">Raúl Quintana</span>
+                                <a href="mailto:raulquintanazinc@gmail.com" class="text-xs text-[#087A45] font-semibold hover:underline inline-flex items-center space-x-1.5 mt-1.5">
                                     <i data-lucide="mail" class="w-3.5 h-3.5"></i>
                                     <span>raulquintanazinc@gmail.com</span>
                                 </a>
@@ -1218,11 +1218,11 @@
                     </div>
 
                     <!-- Derecha: Recuadro del Código QR Interactivo con Zoom Modal -->
-                    <div class="flex flex-col items-center p-4 rounded-2xl bg-white border border-emerald-200 shadow-md flex-shrink-0 text-center w-52">
-                        <div onclick="openQrModal()" title="Clic para ampliar código QR" class="w-36 h-36 rounded-xl bg-slate-50 border border-slate-200 p-1.5 flex items-center justify-center relative overflow-hidden group cursor-pointer shadow-sm hover:border-[#087A45] hover:shadow-md transition-all">
+                    <div class="flex flex-col items-center p-4 rounded-2xl bg-white border border-slate-200 shadow-sm flex-shrink-0 text-center w-52">
+                        <div onclick="openQrModal()" title="Clic para ampliar código QR" class="w-36 h-36 rounded-xl bg-white border border-slate-200 p-1 flex items-center justify-center relative overflow-hidden group cursor-pointer shadow-sm hover:border-[#742284] hover:shadow-md transition-all">
                             <img id="qr-support-img" src="/static/qr_donacion.png" alt="Código QR Yape" 
                                 class="w-full h-full object-contain rounded-lg">
-                            <div class="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[11px] font-bold transition-opacity rounded-lg">
+                            <div class="absolute inset-0 bg-[#102D25]/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[11px] font-bold transition-opacity rounded-lg">
                                 <i data-lucide="zoom-in" class="w-6 h-6 mb-1 text-white"></i>
                                 <span>Ampliar QR</span>
                             </div>
@@ -1230,8 +1230,8 @@
                         <div class="mt-2.5 text-center w-full">
                             <span class="text-xs font-black text-[#102D25] block">Escanear para Apoyar</span>
                             <span class="text-[10px] text-[#64748B] block mt-0.5">Yape &middot; Plin &middot; Billeteras</span>
-                            <button onclick="openQrModal()" class="mt-2 w-full py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-[#087A45] text-[11px] font-bold border border-emerald-200 transition-colors flex items-center justify-center space-x-1 cursor-pointer">
-                                <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
+                            <button onclick="openQrModal()" class="mt-2 w-full py-1.5 rounded-lg bg-[#F4F7F5] hover:bg-slate-200/70 text-[#102D25] text-[11px] font-bold border border-slate-200 transition-colors flex items-center justify-center space-x-1 cursor-pointer">
+                                <i data-lucide="maximize-2" class="w-3.5 h-3.5 text-[#087A45]"></i>
                                 <span>Ver de cerca</span>
                             </button>
                         </div>
@@ -1405,23 +1405,25 @@
                 <i data-lucide="x" class="w-4 h-4"></i>
             </button>
 
-            <!-- Encabezado con branding de Yape -->
+            <!-- Encabezado con branding oficial de Yape -->
             <div class="mb-4">
-                <div class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-50 text-[#087A45] text-xs font-bold border border-emerald-200 mb-2">
-                    <i data-lucide="smartphone" class="w-3.5 h-3.5 text-[#087A45]"></i>
+                <div class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#742284]/10 text-[#742284] text-xs font-bold border border-[#742284]/20 mb-2">
+                    <i data-lucide="smartphone" class="w-3.5 h-3.5 text-[#742284]"></i>
                     <span>Yape &middot; Billetera Digital</span>
                 </div>
-                <h3 class="text-lg font-black text-[#102D25]">Escanear para Donar</h3>
-                <p class="text-xs text-[#087A45] mt-0.5 font-bold">RQ &middot; <a href="mailto:raulquintanazinc@gmail.com" class="hover:underline">raulquintanazinc@gmail.com</a></p>
+                <h3 class="text-xl font-black text-[#102D25]">Escanear para Donar</h3>
+                <p class="text-xs text-[#64748B] mt-1 font-semibold">
+                    Raúl Quintana &middot; <a href="mailto:raulquintanazinc@gmail.com" class="text-[#087A45] hover:underline font-bold">raulquintanazinc@gmail.com</a>
+                </p>
             </div>
 
             <!-- Imagen QR en Grande y Nítida -->
-            <div class="p-3 bg-white rounded-2xl shadow-lg border-2 border-emerald-500/30 mx-auto max-w-[270px]">
-                <img src="/static/qr_donacion.png" alt="Código QR Yape en Alta Resolución" class="w-full h-auto rounded-xl shadow-sm object-contain">
+            <div class="p-3 bg-white rounded-2xl shadow-xl border border-slate-200 mx-auto max-w-[280px]">
+                <img src="/static/qr_donacion.png" alt="Código QR Yape en Alta Resolución" class="w-full h-auto rounded-xl object-contain">
             </div>
 
-            <p class="text-[11px] text-[#64748B] mt-4 font-medium leading-relaxed">
-                Abre <strong class="text-[#087A45]">Yape</strong> desde tu celular y apunta con la cámara hacia este código para apoyar el proyecto.
+            <p class="text-xs text-[#64748B] mt-4 font-medium leading-relaxed max-w-xs mx-auto">
+                Abre la aplicación <strong class="text-[#742284] font-bold">Yape</strong> desde tu celular y apunta hacia este código para apoyar el proyecto.
             </p>
 
             <!-- Botón Cerrar -->
