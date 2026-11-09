@@ -18,7 +18,7 @@
     --brand-dark: #102D25;
     --bg-light: #F4F7F5;
     --card-white: #FFFFFF;
-    --text-muted: #64748B;
+    --text-muted: #1E3A34; /* Tono grafito bosque de alto contraste para máxima legibilidad de KPIs */
     --border-subtle: #E2E8F0;
     --border-card: #E2E8F0;
 }
@@ -251,7 +251,7 @@ body.sidebar-is-collapsed #main-content-scroll {
     color: var(--brand-dark) !important; /* #102D25 */
 }
 
-/* Evitar texto blanco fantasma en tarjetas blancas */
+/* Evitar texto blanco en títulos de tarjetas */
 #main-content-scroll .glass-card h1,
 #main-content-scroll .glass-card h2,
 #main-content-scroll .glass-card h3,
@@ -259,26 +259,23 @@ body.sidebar-is-collapsed #main-content-scroll {
 #main-content-scroll .glass-panel h1,
 #main-content-scroll .glass-panel h2,
 #main-content-scroll .glass-panel h3,
-#main-content-scroll .glass-panel h4,
-#main-content-scroll .glass-card .text-white,
-#main-content-scroll .glass-panel .text-white {
+#main-content-scroll .glass-panel h4 {
     color: var(--brand-dark) !important; /* #102D25 */
 }
 
-/* Botones principales con texto e iconos blanco puro 100% visible */
-#main-content-scroll button.bg-\[\#087A45\],
-#main-content-scroll button.bg-\[\#087A45\] *,
-#main-content-scroll button.bg-emerald-600,
-#main-content-scroll button.bg-emerald-600 *,
-#main-content-scroll button.bg-rose-600,
-#main-content-scroll button.bg-rose-600 *,
-#main-content-scroll button.bg-amber-600,
-#main-content-scroll button.bg-amber-600 *,
-#main-content-scroll .btn-primary,
-#main-content-scroll .btn-primary *,
+/* TODOS los botones de color verde/oscuro/rojo DEBEN tener texto e iconos blanco puro #FFFFFF */
+button[class*="bg-[#087A45]"],
+button[class*="bg-[#087A45]"] *,
+button[class*="bg-emerald"],
+button[class*="bg-emerald"] *,
+button[class*="bg-rose"],
+button[class*="bg-rose"] *,
+.btn-primary,
+.btn-primary *,
 #btn-quick-optimize,
 #btn-quick-optimize * {
     color: #FFFFFF !important;
+    fill: #FFFFFF !important;
 }
 
 /* ================== BOTÓN FLOTANTE EN EL MEDIO DEL BORDE ================== */
