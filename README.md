@@ -89,7 +89,7 @@ http://127.0.0.1:8000
 ### Ejecución Manual por Consola:
 ```bash
 # 1. Clonar el repositorio
-git clone https://github.com/tu-usuario/NosClean.git
+git clone https://github.com/yKoutl/NosClean.git
 cd NosClean
 
 # 2. Instalar dependencias
@@ -97,6 +97,52 @@ pip install -r requirements.txt
 
 # 3. Iniciar el servidor
 python main.py
+```
+
+---
+
+## 📁 Estructura del Proyecto
+
+El proyecto sigue una arquitectura limpia y modularizada:
+
+```text
+NosClean/
+├── app/                     # Módulos del backend (auditoría, limpieza, diagnóstico)
+│   ├── advisor.py           # Algoritmo de salud y recomendaciones
+│   ├── auditor.py           # Telemetría de hardware (CPU, RAM, discos, batería)
+│   ├── cleaner.py           # Escaneo y eliminación de temporales
+│   ├── organizer.py         # Clasificación inteligente de archivos y descargas
+│   ├── software.py          # Gestor de programas y apps de inicio
+│   ├── storage.py           # Análisis de almacenamiento y archivos gigantes
+│   └── utils.py             # Formateo de bytes y utilidades puras
+├── static/                  # Interfaz gráfica moderna (SPA)
+│   ├── index.html           # Plantilla principal
+│   ├── logo.png             # Logo corporativo oficial
+│   ├── favicon.ico          # Favicon para el navegador
+│   ├── css/style.css        # Tailwind + variables de color institucionales
+│   └── js/app.js            # Lógica reactiva de UI, modales y llamadas API
+├── docs/                    # Normativas y estándares institucionales
+│   ├── standards/           # Guías de commits, UTF-8, modales y frontend
+│   └── testing/             # Protocolo de testing automatizado
+├── scripts/                 # Herramientas de pruebas y CI/CD
+│   └── test_modular_integrity.py  # Suite de testing de 5 niveles
+├── tools/                   # Utilidades administrativas y de mantenimiento
+│   └── maintenance/         # Respaldos y optimizaciones por lotes
+├── assets/                  # Recursos gráficos y branding
+├── NosClean_app.ico         # Icono oficial squircle de alta resolución
+├── iniciar_panel.vbs        # Lanzador silencioso en segundo plano
+├── run.bat                  # Lanzador rápido por terminal
+└── main.py                  # Servidor FastAPI principal
+```
+
+---
+
+## 🧪 Pruebas Automatizadas
+
+NosClean incluye una suite de testing de 5 niveles que audita la integridad de archivos, la ausencia de ventanas nativas (`window.confirm`/`alert`), la sintaxis de JavaScript, las funciones puras y los endpoints HTTP:
+
+```bash
+python scripts/test_modular_integrity.py
 ```
 
 ---
