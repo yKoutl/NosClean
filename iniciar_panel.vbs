@@ -1,7 +1,18 @@
 Set WshShell = CreateObject("WScript.Shell")
 Set fso = CreateObject("Scripting.FileSystemObject")
 
-' Comprobar si el servidor HTTP responde silenciosamente (100% en memoria, cero ventanas CMD)
+Dim scriptDir
+scriptDir = fso.GetParentFolderName(WScript.ScriptFullName)
+
+' 1. Si existe el ejecutable compilado NosClean.exe, ejecutarlo directamente (posee icono oficial y ventana nativa)
+Dim exePath
+exePath = scriptDir & "\NosClean.exe"
+If fso.FileExists(exePath) Then
+    WshShell.Run """" & exePath & """", 1, False
+    WScript.Quit
+End If
+
+' 2. Comprobar si el servidor HTTP responde silenciosamente
 Function IsServerRunning()
     On Error Resume Next
     Dim http
@@ -19,44 +30,11 @@ Function IsServerRunning()
     On Error GoTo 0
 End Function
 
-Dim scriptDir
-scriptDir = fso.GetParentFolderName(WScript.ScriptFullName)
-
-' Si el servidor no esta activo, arrancarlo con pythonw de forma 100% invisible (sin consola)
+' Si el servidor no esta activo, arrancarlo con pythonw main.py (abre ventana nativa con icono NosClean)
 If Not IsServerRunning() Then
     WshShell.Run "pythonw.exe """ & scriptDir & "\main.py""", 0, False
-    
-    ' Esperar silenciosamente hasta que el servidor responda
-    Dim i
-    For i = 1 To 20
-        WScript.Sleep 100
-        If IsServerRunning() Then Exit For
-    Next
+    WScript.Quit
 End If
 
-' Lanzar aplicacion en ventana de escritorio limpia dedicada
-Dim appUrl, edgePath, chromePath, appOpened
-appUrl = "http://127.0.0.1:8000"
-appOpened = False
-
-edgePath = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
-If Not fso.FileExists(edgePath) Then
-    edgePath = "C:\Program Files\Microsoft\Edge\Application\msedge.exe"
-End If
-
-chromePath = "C:\Program Files\Google\Chrome\Application\chrome.exe"
-If Not fso.FileExists(chromePath) Then
-    chromePath = "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
-End If
-
-If fso.FileExists(edgePath) Then
-    WshShell.Run """" & edgePath & """ --app=""" & appUrl & """ --window-size=1280,820", 1, False
-    appOpened = True
-ElseIf fso.FileExists(chromePath) Then
-    WshShell.Run """" & chromePath & """ --app=""" & appUrl & """ --window-size=1280,820", 1, False
-    appOpened = True
-End If
-
-If Not appOpened Then
-    WshShell.Run appUrl, 1, False
-End If
+' Si el servidor ya estaba activo, abrir ventana nativa a traves de main.py
+WshShell.Run "pythonw.exe """ & scriptDir & "\main.py""", 0, False

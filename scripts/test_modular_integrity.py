@@ -143,25 +143,29 @@ def run_tests():
     assert_test("recommendations" in advice and isinstance(advice["recommendations"], list), "generate_pc_advice() genera lista de recomendaciones")
 
     # -------------------------------------------------------------
-    # NIVEL 5: Integración de Endpoints FastAPI (Servidor Activo)
+    # NIVEL 5: Integración de Endpoints FastAPI (TestClient & Integración)
     # -------------------------------------------------------------
-    log_header("NIVEL 5: Integración de Endpoints FastAPI (HTTP 200)")
+    log_header("NIVEL 5: Integración de Endpoints FastAPI")
+    from fastapi.testclient import TestClient
+    from main import app
+    client = TestClient(app)
+
     endpoints = [
-        "/",
-        "/api/system/overview",
-        "/api/advisor/recommendations",
-        "/api/junk/scan",
-        "/api/software/startup"
+        ("/", 200),
+        ("/api/system/overview", 200),
+        ("/api/advisor/recommendations", 200),
+        ("/api/junk/scan", 200),
+        ("/api/software/startup", 200),
+        ("/api/storage/common-paths", 200)
     ]
 
-    base_url = "http://127.0.0.1:8000"
-    for ep in endpoints:
-        try:
-            req = urllib.request.Request(f"{base_url}{ep}")
-            with urllib.request.urlopen(req, timeout=5) as response:
-                assert_test(response.status == 200, f"Endpoint {ep} responde HTTP 200 OK")
-        except urllib.error.URLError as e:
-            assert_test(False, f"Endpoint {ep} responde HTTP 200 OK", f"Error de conexión: {e}")
+    for ep, expected_code in endpoints:
+        res = client.get(ep)
+        assert_test(res.status_code == expected_code, f"Endpoint {ep} responde HTTP {expected_code} OK")
+
+    # Probar creación de atajo en escritorio
+    shortcut_res = client.post("/api/actions/create-shortcut", json={"target": "desktop"})
+    assert_test(shortcut_res.status_code == 200 and shortcut_res.json().get("success") is True, "Endpoint /api/actions/create-shortcut crea acceso directo")
 
     # Resumen Final
     print(f"\n{BOLD}======================================================{RESET}")

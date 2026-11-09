@@ -1033,9 +1033,55 @@ function closeQrModal() {
     }
 }
 
+// ======================== ATAJOS: ESCRITORIO Y BARRA DE TAREAS ========================
+async function createShortcut(target = 'desktop') {
+    const isTaskbar = target === 'taskbar';
+    showToast(isTaskbar ? 'Preparando acceso oficial para la Barra de Tareas...' : 'Creando acceso directo en el Escritorio...', 'info');
+
+    try {
+        const res = await fetch('/api/actions/create-shortcut', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ target: target })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            if (isTaskbar) {
+                openTaskbarModal();
+            } else {
+                showToast(data.message || 'Acceso directo oficial creado en tu Escritorio.', 'success');
+            }
+        } else {
+            showToast(data.detail || data.message || 'No se pudo crear el acceso directo.', 'error');
+        }
+    } catch (err) {
+        showToast(`Error al procesar acceso directo: ${err.message}`, 'error');
+    }
+}
+
+function openTaskbarModal() {
+    const modal = document.getElementById('pin-taskbar-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        lucide.createIcons();
+    }
+}
+
+function closeTaskbarModal() {
+    const modal = document.getElementById('pin-taskbar-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
 // Escuchar tecla ESC para cerrar cualquier modal abierto
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
+        const taskbarModal = document.getElementById('pin-taskbar-modal');
+        if (taskbarModal && !taskbarModal.classList.contains('hidden')) {
+            closeTaskbarModal();
+        }
         const qrModal = document.getElementById('qr-modal');
         if (qrModal && !qrModal.classList.contains('hidden')) {
             closeQrModal();

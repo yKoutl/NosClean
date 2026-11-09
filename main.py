@@ -13,7 +13,7 @@ from app.storage import scan_heavy_files, analyze_folder_breakdown, COMMON_PATHS
 from app.software import get_installed_programs, get_startup_applications
 from app.organizer import scan_target_folder, organize_files
 from app.advisor import generate_pc_advice
-from app.utils import open_in_explorer, recycle_path, open_windows_app
+from app.utils import open_in_explorer, recycle_path, open_windows_app, create_windows_shortcut
 
 app = FastAPI(
     title="NosClean",
@@ -162,6 +162,16 @@ def api_action_open_tool(req: ToolActionRequest):
         raise HTTPException(status_code=400, detail=msg)
     return {"success": True, "message": msg}
 
+class ShortcutRequest(BaseModel):
+    target: str = "desktop"  # "desktop" o "taskbar"
+
+@app.post("/api/actions/create-shortcut")
+def api_action_create_shortcut(req: ShortcutRequest):
+    success, msg, data = create_windows_shortcut(req.target)
+    if not success:
+        raise HTTPException(status_code=400, detail=msg)
+    return {"success": True, "message": msg, "data": data}
+
 def launch_browser():
     import time, subprocess
     time.sleep(0.7)
@@ -186,9 +196,9 @@ def launch_browser():
     webbrowser.open(url)
 
 if __name__ == "__main__":
-    import socket, threading, ctypes
+    import socket, threading, ctypes, time
 
-    # Registrar AppUserModelID para que Windows asigne el icono oficial de NosClean en la barra de tareas
+    # Registrar AppUserModelID oficial para que Windows agrupe el proceso bajo NosClean y muestre NosClean.ico
     try:
         myappid = 'NosClean.OptimizationSuite.v5.0.3'
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
@@ -199,31 +209,38 @@ if __name__ == "__main__":
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             return s.connect_ex(('127.0.0.1', port)) == 0
 
-    if is_port_busy(8000):
-        launch_browser()
-    else:
-        # En modo ejecutable (.exe), arrancar como ventana de escritorio nativa WebView2
-        if getattr(sys, 'frozen', False):
-            server_thread = threading.Thread(
-                target=lambda: uvicorn.run(app, host="127.0.0.1", port=8000, log_level="warning"),
-                daemon=True
-            )
-            server_thread.start()
+    ico_path = os.path.join(BASE_DIR, "NosClean.ico")
+    if not os.path.exists(ico_path):
+        ico_path = os.path.join(STATIC_DIR, "favicon.ico")
 
-            try:
-                import webview
-                ico_path = os.path.join(BASE_DIR, "NosClean.ico")
-                window = webview.create_window(
-                    title='NosClean',
-                    url='http://127.0.0.1:8000',
-                    width=1280,
-                    height=820,
-                    min_size=(960, 640)
-                )
-                webview.start()
-                os._exit(0)
-            except Exception:
-                launch_browser()
-                server_thread.join()
-        else:
-            uvicorn.run(app, host="127.0.0.1", port=8000, log_level="warning")
+    # Iniciar servidor backend FastAPI en segundo plano si no está corriendo
+    server_running = is_port_busy(8000)
+    if not server_running:
+        server_thread = threading.Thread(
+            target=lambda: uvicorn.run(app, host="127.0.0.1", port=8000, log_level="warning"),
+            daemon=True
+        )
+        server_thread.start()
+        # Esperar hasta que responda
+        for _ in range(30):
+            time.sleep(0.1)
+            if is_port_busy(8000):
+                break
+
+    # Lanzar la aplicación en ventana de escritorio nativa WebView2 (icono verde propio, cero Edge)
+    try:
+        import webview
+        window = webview.create_window(
+            title='NosClean',
+            url='http://127.0.0.1:8000',
+            width=1280,
+            height=820,
+            min_size=(960, 640)
+        )
+        webview.start(icon=ico_path if os.path.exists(ico_path) else None)
+        os._exit(0)
+    except Exception:
+        # Si webview no está disponible en este entorno, usar fallback de navegador
+        launch_browser()
+        if not server_running:
+            server_thread.join()
