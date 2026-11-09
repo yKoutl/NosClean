@@ -279,7 +279,24 @@ button[class*="bg-rose"] *,
 #btn-quick-optimize,
 #btn-quick-optimize * {
     color: #FFFFFF !important;
-    fill: #FFFFFF !important;
+}
+
+/* Lucide Icons: Siempre trazos limpios outline (NUNCA plastas ni rellenos sólidos accidentales) */
+svg.lucide,
+svg.lucide path,
+svg.lucide circle,
+svg.lucide rect,
+svg.lucide polygon,
+svg.lucide line,
+svg.lucide polyline {
+    fill: none !important;
+    stroke: currentColor !important;
+}
+
+/* Excepción única para el rayo si tiene fill explícito */
+#optimize-icon.fill-\[\#16B84E\],
+#optimize-icon[class*="fill-"] {
+    fill: #16B84E !important;
 }
 
 /* ================== BOTÓN FLOTANTE EN EL MEDIO DEL BORDE ================== */
