@@ -196,6 +196,9 @@ def launch_browser():
     webbrowser.open(url)
 
 if __name__ == "__main__":
+    import multiprocessing
+    multiprocessing.freeze_support()
+
     import socket, threading, ctypes, time
 
     # Registrar AppUserModelID oficial para que Windows agrupe el proceso bajo NosClean y muestre NosClean.ico
@@ -217,7 +220,7 @@ if __name__ == "__main__":
     if not os.path.exists(ico_path):
         ico_path = os.path.join(STATIC_DIR, "favicon.ico")
 
-    # Iniciar servidor backend FastAPI en hilo ultra-rápido si no está corriendo
+    # Iniciar servidor backend FastAPI en segundo plano si no está corriendo
     server_running = is_port_in_use(8000)
     if not server_running:
         server_thread = threading.Thread(
@@ -225,6 +228,13 @@ if __name__ == "__main__":
             daemon=True
         )
         server_thread.start()
+        # Esperar hasta que uvicorn esté listo para responder (aprox 150 ms)
+        for _ in range(60):
+            time.sleep(0.05)
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(0.05)
+                if s.connect_ex(('127.0.0.1', 8000)) == 0:
+                    break
 
     # Lanzar la aplicación en ventana de escritorio nativa WebView2 (icono verde propio, cero Edge)
     try:
