@@ -1,29 +1,39 @@
 Set WshShell = CreateObject("WScript.Shell")
 Set fso = CreateObject("Scripting.FileSystemObject")
 
-' Comprobar si el backend en puerto 8000 ya esta escuchando
-Dim oExec, sOutput
-Set oExec = WshShell.Exec("cmd /c netstat -ano | findstr :8000 | findstr LISTENING")
-sOutput = oExec.StdOut.ReadAll()
+' Comprobar si el servidor HTTP responde silenciosamente (100% en memoria, cero ventanas CMD)
+Function IsServerRunning()
+    On Error Resume Next
+    Dim http
+    Set http = CreateObject("MSXML2.ServerXMLHTTP.6.0")
+    http.setTimeouts 500, 500, 500, 500
+    http.open "GET", "http://127.0.0.1:8000/favicon.ico", False
+    http.send
+    If Err.Number = 0 Then
+        If http.status = 200 Then
+            IsServerRunning = True
+            Exit Function
+        End If
+    End If
+    IsServerRunning = False
+    On Error GoTo 0
+End Function
 
-If InStr(sOutput, "LISTENING") = 0 Then
-    ' Iniciar backend FastAPI de forma 100% oculta en segundo plano (sin ventana CMD)
-    WshShell.Run "cmd /c cd /d ""D:\PROYECTOS\limpiar pc"" && python main.py", 0, False
+' Si el servidor no esta activo, arrancarlo con pythonw de forma 100% invisible (sin consola)
+If Not IsServerRunning() Then
+    WshShell.Run "pythonw.exe ""D:\PROYECTOS\limpiar pc\main.py""", 0, False
     
-    ' Polling activo de puerto: abre inmediatamente al responder (max 2 segs)
-    Dim attempt
-    For attempt = 1 To 20
+    ' Esperar silenciosamente hasta que el servidor responda
+    Dim i
+    For i = 1 To 20
         WScript.Sleep 100
-        Set oExec = WshShell.Exec("cmd /c netstat -ano | findstr :8000 | findstr LISTENING")
-        If InStr(oExec.StdOut.ReadAll(), "LISTENING") > 0 Then Exit For
+        If IsServerRunning() Then Exit For
     Next
 End If
 
-' Buscar navegador instalado para abrir como VENTANA DE APLICACIÓN DE ESCRITORIO DEDICADA
-' Con perfil independiente para fijar icono corporativo en barra de tareas de Windows
-Dim appUrl, profileDir, edgePath, chromePath, appOpened
+' Lanzar aplicacion en ventana de escritorio limpia dedicada
+Dim appUrl, edgePath, chromePath, appOpened
 appUrl = "http://127.0.0.1:8000"
-profileDir = "D:\PROYECTOS\limpiar pc\.nosclean_profile"
 appOpened = False
 
 edgePath = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
@@ -37,14 +47,13 @@ If Not fso.FileExists(chromePath) Then
 End If
 
 If fso.FileExists(edgePath) Then
-    WshShell.Run """" & edgePath & """ --user-data-dir=""" & profileDir & """ --app=""" & appUrl & """ --window-size=1280,820", 1, False
+    WshShell.Run """" & edgePath & """ --app=""" & appUrl & """ --window-size=1280,820", 1, False
     appOpened = True
 ElseIf fso.FileExists(chromePath) Then
-    WshShell.Run """" & chromePath & """ --user-data-dir=""" & profileDir & """ --app=""" & appUrl & """ --window-size=1280,820", 1, False
+    WshShell.Run """" & chromePath & """ --app=""" & appUrl & """ --window-size=1280,820", 1, False
     appOpened = True
 End If
 
 If Not appOpened Then
-    ' Fallback estandar
     WshShell.Run appUrl, 1, False
 End If
