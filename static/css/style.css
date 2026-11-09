@@ -11,6 +11,10 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
+:root, html, body, select, input, option {
+    color-scheme: light !important;
+}
+
 :root {
     --brand-primary: #087A45;
     --brand-primary-hover: #066237;
@@ -384,17 +388,76 @@ body.sidebar-is-collapsed #sidebar-toggle-btn {
     font-weight: 600 !important;
 }
 
+
 /* Inputs y Selects */
-input, select {
+select {
     background-color: #FFFFFF !important;
-    border: 1px solid #CBD5E1 !important;
+    color: var(--brand-dark) !important;
+    border: 1.5px solid rgba(8, 122, 69, 0.35) !important;
+    border-radius: 0.75rem !important;
+    font-weight: 600 !important;
+    padding: 0.35rem 0.75rem !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+}
+
+select:hover {
+    border-color: var(--brand-primary) !important;
+}
+
+select:focus {
+    border-color: var(--brand-primary) !important;
+    outline: 2px solid rgba(8, 122, 69, 0.2) !important;
+    box-shadow: 0 0 0 3px rgba(8, 122, 69, 0.15) !important;
+}
+
+select option {
+    background-color: #FFFFFF !important;
+    color: var(--brand-dark) !important;
+    font-weight: 600 !important;
+    padding: 8px 12px !important;
+}
+
+option:checked, option:hover {
+    background-color: #E8F5E9 !important;
+    color: var(--brand-primary) !important;
+}
+
+input {
+    background-color: #FFFFFF !important;
+    border: 1.5px solid #CBD5E1 !important;
+    border-radius: 0.75rem !important;
     color: var(--brand-dark) !important;
 }
 
-input:focus, select:focus {
+input:focus {
     border-color: var(--brand-primary) !important;
     outline: 2px solid rgba(8, 122, 69, 0.2) !important;
 }
+
+/* Botones secundarios universales */
+.btn-secondary {
+    background: #FFFFFF !important;
+    color: var(--brand-dark) !important;
+    border: 1.5px solid rgba(8, 122, 69, 0.3) !important;
+    box-shadow: 0 1px 3px rgba(16, 45, 37, 0.05) !important;
+    font-weight: 700 !important;
+}
+
+.btn-secondary:hover {
+    background: #F4F7F5 !important;
+    border-color: var(--brand-primary) !important;
+}
+
+.btn-secondary i {
+    color: var(--brand-primary) !important;
+}
+
+.btn-secondary span {
+    color: var(--brand-dark) !important;
+}
+
 
 /* Modales */
 #confirm-modal .glass-panel {

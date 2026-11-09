@@ -578,8 +578,8 @@ async function loadInstalledApps() {
         <tr>
             <td colspan="6" class="text-center py-10 text-slate-400">
                 <div class="flex flex-col items-center space-y-2">
-                    <i data-lucide="loader-2" class="w-6 h-6 text-blue-400 animate-spin"></i>
-                    <span>Analizando registro de Windows...</span>
+                    <i data-lucide="loader-2" class="w-6 h-6 text-[#087A45] animate-spin"></i>
+                    <span class="text-[#102D25] font-bold">Analizando registro de Windows...</span>
                 </div>
             </td>
         </tr>
