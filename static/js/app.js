@@ -75,7 +75,7 @@ function switchTab(tabId) {
     currentTab = tabId;
     
     // Hide all tabs
-    ['advisor', 'overview', 'cleaner', 'heavy', 'apps', 'organizer', 'startup', 'guide'].forEach(id => {
+    ['advisor', 'overview', 'cleaner', 'heavy', 'apps', 'organizer', 'startup', 'guide', 'about'].forEach(id => {
         const sec = document.getElementById(`tab-${id}`);
         const btn = document.getElementById(`tab-btn-${id}`);
         if (sec) sec.classList.add('hidden');

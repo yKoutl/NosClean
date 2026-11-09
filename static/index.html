@@ -144,22 +144,14 @@
                 <i data-lucide="book-open" class="w-4 h-4 flex-shrink-0 text-amber-400"></i>
                 <span class="nav-text truncate">Guía y Legal</span>
             </button>
-        </nav>
 
-        <!-- Ficha NosClean: Autor y Propósito -->
-        <div id="sidebar-app-info" class="p-2.5 rounded-xl bg-white/[0.04] border border-white/10 nav-text">
-            <div class="flex items-center space-x-1.5 text-[11px] font-bold text-amber-300 mb-1">
-                <i data-lucide="info" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
-                <span>Acerca de NosClean</span>
-            </div>
-            <p class="text-[11px] text-slate-300 leading-snug">
-                Suite de optimización, limpieza segura y aceleración para Windows. 100% local y de código abierto.
-            </p>
-            <div class="mt-2 pt-1.5 border-t border-white/10 flex items-center justify-between text-[10px] text-slate-400">
-                <span>Autor: <strong class="text-slate-100 font-bold">Raúl Quintana</strong></span>
-                <span class="text-amber-400 font-bold">v2.0</span>
-            </div>
-        </div>
+            <!-- 9. Acerca de (Página dedicada al autor y visión del software) -->
+            <button onclick="switchTab('about')" id="tab-btn-about" title="Acerca de NosClean y Autor"
+                class="nav-tab flex items-center space-x-3 w-full px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-white/5 border border-transparent cursor-pointer">
+                <i data-lucide="info" class="w-4 h-4 flex-shrink-0 text-[#16B84E]"></i>
+                <span class="nav-text truncate">Acerca de</span>
+            </button>
+        </nav>
 
         <!-- Atajos Rápidos Compactos -->
         <div class="pt-2.5 border-t border-white/10 sidebar-footer">
@@ -1043,6 +1035,138 @@
                         </p>
                         <p>
                             <strong class="text-[#102D25]">Cláusula As-Is:</strong> El software se entrega «tal cual» (*as-is*), sin garantías expresas o implícitas. Aunque el sistema implementa rigurosas pruebas de seguridad y solicita confirmación antes de cualquier acción destructiva, el usuario es responsable de verificar los archivos que decide eliminar de forma permanente.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ======================== TAB 9: ACERCA DE (PÁGINA DEDICADA) ======================== -->
+        <section id="tab-about" class="space-y-6 hidden">
+            <!-- Hero Card con Logo y Branding Oficial -->
+            <div class="glass-card rounded-2xl p-6 sm:p-8 border border-slate-200 bg-white shadow-sm">
+                <div class="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6 text-center sm:text-left">
+                    <img src="/static/favicon.png" alt="NosClean Logo" class="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl shadow-md border-2 border-emerald-500/30 p-1 bg-white flex-shrink-0">
+                    <div class="space-y-2">
+                        <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-100 text-[#087A45] border border-emerald-300">
+                                Versión 2.0
+                            </span>
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#F4F7F5] text-[#102D25] border border-slate-200">
+                                Código Abierto &middot; Open Source
+                            </span>
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-[#087A45] border border-emerald-200">
+                                100% Local (Sin Telemetría)
+                            </span>
+                        </div>
+                        <h1 class="text-2xl sm:text-3xl font-black text-[#102D25] tracking-tight">NosClean</h1>
+                        <p class="text-xs sm:text-sm text-[#64748B] max-w-2xl font-medium leading-relaxed">
+                            Suite inteligente de optimización, auditoría de hardware, limpieza segura de temporales y organización automática para sistemas Windows.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fichas Principales en Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <!-- 1. ¿De qué trata NosClean? -->
+                <div class="glass-card rounded-2xl p-5 sm:p-6 border border-slate-200 bg-white shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center space-x-2.5 text-[#087A45] mb-3">
+                            <div class="p-2 rounded-xl bg-emerald-50 border border-emerald-100">
+                                <i data-lucide="target" class="w-5 h-5 text-[#087A45]"></i>
+                            </div>
+                            <h3 class="text-base font-bold text-[#102D25]">¿De qué trata NosClean?</h3>
+                        </div>
+                        <div class="text-xs text-[#1E3A34] leading-relaxed space-y-2.5">
+                            <p>
+                                <strong class="text-[#102D25]">NosClean</strong> nació con la visión de ofrecer una herramienta de mantenimiento y limpieza verdaderamente limpia, transparente y respetuosa con el usuario.
+                            </p>
+                            <p>
+                                A diferencia de los optimizadores tradicionales que saturan la computadora con publicidad intrusiva, compras forzadas y servicios en segundo plano que ralentizan el inicio, NosClean funciona de forma <strong class="text-[#087A45]">100% local</strong> y se apaga por completo al pulsar el botón de salida, consumiendo <strong class="text-[#102D25]">0 MB</strong> cuando no está en uso.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3.5 border-t border-slate-100 flex items-center space-x-2 text-[11px] font-bold text-[#087A45]">
+                        <i data-lucide="check-circle" class="w-4 h-4"></i>
+                        <span>Sin suscripciones, sin anuncios y sin consumo oculto.</span>
+                    </div>
+                </div>
+
+                <!-- 2. Autor y Créditos -->
+                <div class="glass-card rounded-2xl p-5 sm:p-6 border border-slate-200 bg-white shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center space-x-2.5 text-[#087A45] mb-3">
+                            <div class="p-2 rounded-xl bg-emerald-50 border border-emerald-100">
+                                <i data-lucide="user-check" class="w-5 h-5 text-[#087A45]"></i>
+                            </div>
+                            <h3 class="text-base font-bold text-[#102D25]">Autor y Créditos</h3>
+                        </div>
+                        <div class="text-xs text-[#1E3A34] leading-relaxed space-y-2.5">
+                            <div class="p-3 rounded-xl bg-[#F4F7F5] border border-slate-200">
+                                <span class="text-[11px] font-bold text-[#64748B] uppercase tracking-wider block">Desarrollador y Creador</span>
+                                <span class="text-base font-black text-[#102D25] block mt-0.5">Raúl Quintana</span>
+                            </div>
+                            <p>
+                                Proyecto concebido, diseñado y construido para brindar un estándar de excelencia en la limpieza digital de computadoras portátiles y de escritorio con Windows 10 y 11.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between text-xs">
+                        <span class="text-[#64748B]">Licencia: <strong class="text-[#102D25]">Código Abierto</strong></span>
+                        <a href="https://github.com/yKoutl/NosClean" target="_blank" rel="noopener noreferrer"
+                            class="text-[#087A45] font-bold hover:underline flex items-center space-x-1">
+                            <i data-lucide="github" class="w-3.5 h-3.5"></i>
+                            <span>Ver en GitHub</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Los 4 Pilares de NosClean -->
+            <div class="glass-card rounded-2xl p-5 sm:p-6 border border-slate-200 bg-white shadow-sm">
+                <h3 class="text-sm font-bold text-[#102D25] uppercase tracking-wider mb-4 flex items-center space-x-2">
+                    <i data-lucide="layers" class="w-4 h-4 text-[#087A45]"></i>
+                    <span>Pilares Fundamentales de NosClean</span>
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                    <div class="p-3.5 rounded-xl bg-[#F4F7F5] border border-slate-200">
+                        <div class="flex items-center space-x-2 text-[#087A45] font-bold text-xs mb-1.5">
+                            <i data-lucide="shield" class="w-4 h-4"></i>
+                            <span>1. Privacidad Total</span>
+                        </div>
+                        <p class="text-[11px] text-[#64748B] leading-relaxed">
+                            Cero telemetría. Tus archivos y rutas de disco jamás son enviados a ningún servidor externo.
+                        </p>
+                    </div>
+
+                    <div class="p-3.5 rounded-xl bg-[#F4F7F5] border border-slate-200">
+                        <div class="flex items-center space-x-2 text-[#087A45] font-bold text-xs mb-1.5">
+                            <i data-lucide="code" class="w-4 h-4"></i>
+                            <span>2. Código Abierto</span>
+                        </div>
+                        <p class="text-[11px] text-[#64748B] leading-relaxed">
+                            Código 100% auditable por la comunidad para verificar que es limpio, seguro y confiable.
+                        </p>
+                    </div>
+
+                    <div class="p-3.5 rounded-xl bg-[#F4F7F5] border border-slate-200">
+                        <div class="flex items-center space-x-2 text-[#087A45] font-bold text-xs mb-1.5">
+                            <i data-lucide="zap" class="w-4 h-4"></i>
+                            <span>3. Cero Residuos</span>
+                        </div>
+                        <p class="text-[11px] text-[#64748B] leading-relaxed">
+                            Al cerrar NosClean, no queda ningún proceso ni servicio consumiendo RAM en segundo plano.
+                        </p>
+                    </div>
+
+                    <div class="p-3.5 rounded-xl bg-[#F4F7F5] border border-slate-200">
+                        <div class="flex items-center space-x-2 text-[#087A45] font-bold text-xs mb-1.5">
+                            <i data-lucide="check-square" class="w-4 h-4"></i>
+                            <span>4. Cero Ventanas Nativas</span>
+                        </div>
+                        <p class="text-[11px] text-[#64748B] leading-relaxed">
+                            Modales propios y elegantes para todas las confirmaciones, sin alertas toscas del navegador.
                         </p>
                     </div>
                 </div>
