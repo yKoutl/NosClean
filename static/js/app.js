@@ -14,9 +14,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function initApp() {
     initSidebarState();
-    await loadCommonPaths();
-    loadAdvisor();
-    loadOverview();
+    try {
+        await loadCommonPaths();
+    } catch (e) {
+        console.warn("Aviso al cargar rutas:", e);
+    }
+    try {
+        loadAdvisor();
+        loadOverview();
+    } catch (e) {
+        console.warn("Aviso al iniciar modulos:", e);
+    }
     // Auto-refresh metrics every 20 seconds
     setInterval(updateQuickMetrics, 20000);
 
@@ -28,7 +36,7 @@ async function initApp() {
         setTimeout(() => {
             if (splash.parentNode) splash.parentNode.removeChild(splash);
             checkWelcomeModal();
-        }, 400);
+        }, 300);
     } else {
         checkWelcomeModal();
     }
@@ -1009,9 +1017,29 @@ function closeWelcomeModal() {
     }
 }
 
+// ======================== MODAL DE QR (AMPLIADO) ========================
+function openQrModal() {
+    const modal = document.getElementById('qr-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        lucide.createIcons();
+    }
+}
+
+function closeQrModal() {
+    const modal = document.getElementById('qr-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
 // Escuchar tecla ESC para cerrar cualquier modal abierto
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
+        const qrModal = document.getElementById('qr-modal');
+        if (qrModal && !qrModal.classList.contains('hidden')) {
+            closeQrModal();
+        }
         const welcomeModal = document.getElementById('welcome-modal');
         if (welcomeModal && !welcomeModal.classList.contains('hidden')) {
             closeWelcomeModal();

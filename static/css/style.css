@@ -284,18 +284,26 @@ body:not(.sidebar-is-collapsed) #sidebar-toggle-btn {
     color: var(--brand-dark) !important; /* #102D25 */
 }
 
-/* TODOS los botones de color verde/oscuro/rojo DEBEN tener texto e iconos blanco puro #FFFFFF */
-button[class*="bg-[#087A45]"],
-button[class*="bg-[#087A45]"] *,
-button[class*="bg-emerald"],
-button[class*="bg-emerald"] *,
-button[class*="bg-rose"],
-button[class*="bg-rose"] *,
+/* Botones primarios sólidos con texto e iconos blanco puro #FFFFFF */
+button.bg-\[\#087A45\],
+button.bg-\[\#087A45\] *,
+button[class*="bg-emerald-600"],
+button[class*="bg-emerald-600"] *,
+button[class*="bg-emerald-700"],
+button[class*="bg-emerald-700"] *,
+button[class*="bg-rose-600"],
+button[class*="bg-rose-600"] *,
 .btn-primary,
 .btn-primary *,
 #btn-quick-optimize,
 #btn-quick-optimize * {
     color: #FFFFFF !important;
+}
+
+/* Botones secundarios y píldoras claras con texto verde oscuro */
+#btn-show-welcome,
+#btn-show-welcome * {
+    color: #087A45 !important;
 }
 
 /* Lucide Icons: Siempre trazos limpios outline (NUNCA plastas ni rellenos sólidos accidentales) */
