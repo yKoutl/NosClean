@@ -238,8 +238,11 @@ if __name__ == "__main__":
         )
         webview.start(icon=ico_path if os.path.exists(ico_path) else None)
         os._exit(0)
-    except Exception:
-        # Si webview no está disponible en este entorno, usar fallback de navegador
+    except BaseException:
+        # Fallback ultra-resiliente: si WebView2 o DLLs fallan en otra PC, abrir en navegador y mantener servidor vivo
         launch_browser()
-        if not server_running:
-            server_thread.join()
+        try:
+            while True:
+                time.sleep(1)
+        except (KeyboardInterrupt, SystemExit):
+            os._exit(0)

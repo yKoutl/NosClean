@@ -19,8 +19,11 @@ python -m PyInstaller ^
     --add-data="static;static" ^
     --add-data="NosClean.ico;." ^
     --name="NosClean" ^
+    --collect-all="webview" ^
+    --collect-all="pythonnet" ^
     --hidden-import="webview" ^
     --hidden-import="clr" ^
+    --hidden-import="win32com.client" ^
     --hidden-import="uvicorn.logging" ^
     --hidden-import="uvicorn.loops" ^
     --hidden-import="uvicorn.loops.auto" ^
