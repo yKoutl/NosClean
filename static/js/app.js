@@ -75,7 +75,7 @@ function switchTab(tabId) {
     currentTab = tabId;
     
     // Hide all tabs
-    ['advisor', 'overview', 'cleaner', 'heavy', 'apps', 'organizer', 'startup'].forEach(id => {
+    ['advisor', 'overview', 'cleaner', 'heavy', 'apps', 'organizer', 'startup', 'guide'].forEach(id => {
         const sec = document.getElementById(`tab-${id}`);
         const btn = document.getElementById(`tab-btn-${id}`);
         if (sec) sec.classList.add('hidden');
@@ -105,6 +105,34 @@ function switchTab(tabId) {
         loadStartupAndProcs();
     }
 
+    lucide.createIcons();
+}
+
+function switchGuideTab(subTab) {
+    const secManual = document.getElementById('guide-section-manual');
+    const secLegal = document.getElementById('guide-section-legal');
+    const btnManual = document.getElementById('btn-guide-manual');
+    const btnLegal = document.getElementById('btn-guide-legal');
+
+    if (subTab === 'manual') {
+        if (secManual) secManual.classList.remove('hidden');
+        if (secLegal) secLegal.classList.add('hidden');
+        if (btnManual) {
+            btnManual.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-[#087A45] shadow-sm border border-slate-200 cursor-pointer";
+        }
+        if (btnLegal) {
+            btnLegal.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-[#64748B] hover:text-[#102D25] cursor-pointer";
+        }
+    } else {
+        if (secManual) secManual.classList.add('hidden');
+        if (secLegal) secLegal.classList.remove('hidden');
+        if (btnManual) {
+            btnManual.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-[#64748B] hover:text-[#102D25] cursor-pointer";
+        }
+        if (btnLegal) {
+            btnLegal.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-[#087A45] shadow-sm border border-slate-200 cursor-pointer";
+        }
+    }
     lucide.createIcons();
 }
 

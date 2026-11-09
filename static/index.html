@@ -137,6 +137,13 @@
                 <i data-lucide="zap" class="w-4 h-4 flex-shrink-0"></i>
                 <span class="nav-text truncate">Inicio y Procesos</span>
             </button>
+
+            <!-- 8. Guía y Legal -->
+            <button onclick="switchTab('guide')" id="tab-btn-guide" title="Manual de Uso y Marco Legal"
+                class="nav-tab flex items-center space-x-3 w-full px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all">
+                <i data-lucide="book-open" class="w-4 h-4 flex-shrink-0"></i>
+                <span class="nav-text truncate">Guía y Legal</span>
+            </button>
         </nav>
 
         <!-- Atajos Rápidos Compactos -->
@@ -800,6 +807,230 @@
                     </button>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="top-procs-grid"></div>
+            </div>
+        </section>
+
+        <!-- ======================== TAB 8: GUÍA Y MARCO LEGAL ======================== -->
+        <section id="tab-guide" class="space-y-6 hidden">
+            <!-- Header Banner -->
+            <div class="glass-card rounded-2xl p-5 sm:p-6 border border-slate-200 bg-white shadow-sm">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <div class="flex items-center space-x-2 text-[#087A45] text-xs font-bold uppercase tracking-wider mb-1">
+                            <i data-lucide="shield-check" class="w-4 h-4 text-[#087A45]"></i>
+                            <span>Documentación Oficial &middot; NosClean v2.0</span>
+                        </div>
+                        <h2 class="text-xl sm:text-2xl font-black text-[#102D25]">Manual de Uso, Derechos y Marco Legal</h2>
+                        <p class="text-xs sm:text-sm text-[#64748B] mt-1 font-medium">
+                            Guía completa de funcionamiento, principios de privacidad local y términos legales de uso.
+                        </p>
+                    </div>
+                    <!-- Sub-navigation Pill Selector -->
+                    <div class="flex items-center space-x-2 bg-[#F4F7F5] p-1.5 rounded-xl border border-slate-200 self-start md:self-center">
+                        <button onclick="switchGuideTab('manual')" id="btn-guide-manual"
+                            class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-[#087A45] shadow-sm border border-slate-200 cursor-pointer">
+                            Manual de Instrucciones
+                        </button>
+                        <button onclick="switchGuideTab('legal')" id="btn-guide-legal"
+                            class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-[#64748B] hover:text-[#102D25] cursor-pointer">
+                            Derechos y Marco Legal
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUB-TAB 1: MANUAL DE INSTRUCCIONES -->
+            <div id="guide-section-manual" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- 1. Optimización en 1 Clic -->
+                    <div class="glass-card rounded-2xl p-5 border border-slate-200 bg-white shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center space-x-2.5 text-[#087A45] mb-2.5">
+                                <div class="p-2 rounded-xl bg-emerald-50 text-[#087A45] border border-emerald-100">
+                                    <i data-lucide="zap" class="w-4 h-4"></i>
+                                </div>
+                                <h3 class="text-sm sm:text-base font-bold text-[#102D25]">1. Optimización Rápida en 1 Clic</h3>
+                            </div>
+                            <p class="text-xs text-[#64748B] leading-relaxed">
+                                Ubicado en la barra superior permanentemente. Al pulsarlo, ejecuta de forma segura el vaciado de conjuntos de trabajo (<strong class="text-[#102D25]">EmptyWorkingSet</strong>) de procesos inactivos y purga cachés residuales del sistema.
+                            </p>
+                        </div>
+                        <div class="mt-3.5 pt-3 border-t border-slate-100 text-[11px] font-bold text-[#087A45] flex items-center space-x-1.5">
+                            <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                            <span>Seguro: no cierra ninguna de tus aplicaciones abiertas.</span>
+                        </div>
+                    </div>
+
+                    <!-- 2. Limpiador de Basura -->
+                    <div class="glass-card rounded-2xl p-5 border border-slate-200 bg-white shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center space-x-2.5 text-[#087A45] mb-2.5">
+                                <div class="p-2 rounded-xl bg-emerald-50 text-[#087A45] border border-emerald-100">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </div>
+                                <h3 class="text-sm sm:text-base font-bold text-[#102D25]">2. Limpieza de Temporales y Basura</h3>
+                            </div>
+                            <p class="text-xs text-[#64748B] leading-relaxed">
+                                Examina cachés de navegadores (Chrome y Edge), la carpeta <strong class="text-[#102D25]">%TEMP%</strong> de tu usuario, temporales de Windows y la Papelera de Reciclaje. Puedes desmarcar las categorías que desees antes de limpiar.
+                            </p>
+                        </div>
+                        <div class="mt-3.5 pt-3 border-t border-slate-100 text-[11px] font-bold text-[#087A45] flex items-center space-x-1.5">
+                            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+                            <span>Nunca toca contraseñas ni archivos personales de tus navegadores.</span>
+                        </div>
+                    </div>
+
+                    <!-- 3. Archivos Pesados -->
+                    <div class="glass-card rounded-2xl p-5 border border-slate-200 bg-white shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center space-x-2.5 text-[#087A45] mb-2.5">
+                                <div class="p-2 rounded-xl bg-emerald-50 text-[#087A45] border border-emerald-100">
+                                    <i data-lucide="hard-drive" class="w-4 h-4"></i>
+                                </div>
+                                <h3 class="text-sm sm:text-base font-bold text-[#102D25]">3. Detector de Archivos Pesados</h3>
+                            </div>
+                            <p class="text-xs text-[#64748B] leading-relaxed">
+                                Escanea tu disco o carpeta de usuario buscando archivos gigantes (videos, ISOs, copias de seguridad olvidadas) según el umbral que elijas (>50 MB, >100 MB, etc.). Permite ver la carpeta o enviar a papelera con confirmación.
+                            </p>
+                        </div>
+                        <div class="mt-3.5 pt-3 border-t border-slate-100 text-[11px] font-bold text-[#087A45] flex items-center space-x-1.5">
+                            <i data-lucide="info" class="w-3.5 h-3.5"></i>
+                            <span>Protegido: no elimina nada sin confirmación explícita previa.</span>
+                        </div>
+                    </div>
+
+                    <!-- 4. Organizador Automático -->
+                    <div class="glass-card rounded-2xl p-5 border border-slate-200 bg-white shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center space-x-2.5 text-[#087A45] mb-2.5">
+                                <div class="p-2 rounded-xl bg-emerald-50 text-[#087A45] border border-emerald-100">
+                                    <i data-lucide="folder-cog" class="w-4 h-4"></i>
+                                </div>
+                                <h3 class="text-sm sm:text-base font-bold text-[#102D25]">4. Organizador Inteligente</h3>
+                            </div>
+                            <p class="text-xs text-[#64748B] leading-relaxed">
+                                Clasifica archivos sueltos en Descargas o Escritorio hacia subcarpetas organizadas (<strong class="text-[#102D25]">Imágenes, Documentos, Instaladores, Comprimidos, Videos, Código</strong>). Incluye botón de <strong class="text-[#102D25]">Vista Previa</strong> para ver los movimientos antes de ejecutarlos.
+                            </p>
+                        </div>
+                        <div class="mt-3.5 pt-3 border-t border-slate-100 text-[11px] font-bold text-[#087A45] flex items-center space-x-1.5">
+                            <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                            <span>Modo simulación activo para máxima tranquilidad.</span>
+                        </div>
+                    </div>
+
+                    <!-- 5. Programas Instalados -->
+                    <div class="glass-card rounded-2xl p-5 border border-slate-200 bg-white shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center space-x-2.5 text-[#087A45] mb-2.5">
+                                <div class="p-2 rounded-xl bg-emerald-50 text-[#087A45] border border-emerald-100">
+                                    <i data-lucide="layout-grid" class="w-4 h-4"></i>
+                                </div>
+                                <h3 class="text-sm sm:text-base font-bold text-[#102D25]">5. Programas y Aplicaciones</h3>
+                            </div>
+                            <p class="text-xs text-[#64748B] leading-relaxed">
+                                Consulta la lista completa del software instalado en tu equipo, ordenándolo por tamaño o nombre. El botón de desinstalación abre de inmediato el panel oficial de Windows con privilegios de administrador.
+                            </p>
+                        </div>
+                        <div class="mt-3.5 pt-3 border-t border-slate-100 text-[11px] font-bold text-[#087A45] flex items-center space-x-1.5">
+                            <i data-lucide="shield" class="w-3.5 h-3.5"></i>
+                            <span>Desinstalación limpia mediante desinstaladores oficiales.</span>
+                        </div>
+                    </div>
+
+                    <!-- 6. Inicio y Procesos -->
+                    <div class="glass-card rounded-2xl p-5 border border-slate-200 bg-white shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center space-x-2.5 text-[#087A45] mb-2.5">
+                                <div class="p-2 rounded-xl bg-emerald-50 text-[#087A45] border border-emerald-100">
+                                    <i data-lucide="activity" class="w-4 h-4"></i>
+                                </div>
+                                <h3 class="text-sm sm:text-base font-bold text-[#102D25]">6. Inicio de Windows y Procesos</h3>
+                            </div>
+                            <p class="text-xs text-[#64748B] leading-relaxed">
+                                Detecta los programas que arrancan solos al encender tu PC para desactivar los no indispensables, acelerando el arranque. Además, supervisa los procesos que más memoria consumen y permite cerrarlos.
+                            </p>
+                        </div>
+                        <div class="mt-3.5 pt-3 border-t border-slate-100 text-[11px] font-bold text-[#087A45] flex items-center space-x-1.5">
+                            <i data-lucide="gauge" class="w-3.5 h-3.5"></i>
+                            <span>Acelera el encendido de Windows sin comprometer servicios críticos.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUB-TAB 2: DERECHOS Y MARCO LEGAL -->
+            <div id="guide-section-legal" class="space-y-4 hidden">
+                <!-- Tarjeta 1: Propiedad Intelectual -->
+                <div class="glass-card rounded-2xl p-5 sm:p-6 border border-slate-200 bg-white shadow-sm">
+                    <div class="flex items-center space-x-3 text-[#087A45] mb-3">
+                        <div class="p-2 rounded-xl bg-emerald-50 text-[#087A45] border border-emerald-100">
+                            <i data-lucide="award" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-[#102D25]">Propiedad Intelectual y Derechos Reservados</h3>
+                            <p class="text-xs text-[#64748B]">Titularidad del software y derechos de autor</p>
+                        </div>
+                    </div>
+                    <div class="text-xs text-[#1E3A34] leading-relaxed space-y-2">
+                        <p>
+                            El software <strong class="text-[#102D25]">NosClean</strong>, incluyendo su código fuente, arquitectura backend en Python, componentes de interfaz gráfica, logotipos, íconos y documentación técnica, está protegido por las leyes vigentes de propiedad intelectual y tratados internacionales de derechos de autor.
+                        </p>
+                        <p class="font-bold text-[#087A45]">
+                            Copyright &copy; 2026 NosClean Software. Todos los derechos reservados.
+                        </p>
+                        <p>
+                            Se otorga al usuario una licencia de uso no exclusiva e intransferible para el diagnóstico, optimización y mantenimiento de sus equipos personales o corporativos.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Tarjeta 2: Privacidad 100% Local -->
+                <div class="glass-card rounded-2xl p-5 sm:p-6 border border-emerald-200 bg-emerald-50/20 shadow-sm">
+                    <div class="flex items-center space-x-3 text-[#087A45] mb-3">
+                        <div class="p-2 rounded-xl bg-emerald-100 text-[#087A45]">
+                            <i data-lucide="lock" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-[#102D25]">Política de Privacidad: 100% Local y Cero Telemetría</h3>
+                            <p class="text-xs text-[#087A45] font-semibold">Tus archivos nunca salen de tu computadora</p>
+                        </div>
+                    </div>
+                    <ul class="text-xs text-[#1E3A34] space-y-2 leading-relaxed">
+                        <li class="flex items-start space-x-2">
+                            <i data-lucide="check" class="w-4 h-4 text-[#087A45] flex-shrink-0 mt-0.5"></i>
+                            <span><strong class="text-[#102D25]">Sin conexión a servidores externos:</strong> NosClean se ejecuta íntegramente de manera local en tu equipo mediante la dirección loopback (<strong class="text-[#102D25]">127.0.0.1</strong>).</span>
+                        </li>
+                        <li class="flex items-start space-x-2">
+                            <i data-lucide="check" class="w-4 h-4 text-[#087A45] flex-shrink-0 mt-0.5"></i>
+                            <span><strong class="text-[#102D25]">Cero Telemetría y Cero Rastreo:</strong> No recopilamos identificadores, estadísticas de uso, nombres de usuario ni registros de actividad.</span>
+                        </li>
+                        <li class="flex items-start space-x-2">
+                            <i data-lucide="check" class="w-4 h-4 text-[#087A45] flex-shrink-0 mt-0.5"></i>
+                            <span><strong class="text-[#102D25]">Seguridad de Datos Personales:</strong> Ningún documento, imagen o contraseña es leído, indexado o transmitido fuera de tu disco.</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Tarjeta 3: Seguridad y Descargo de Responsabilidad -->
+                <div class="glass-card rounded-2xl p-5 sm:p-6 border border-slate-200 bg-white shadow-sm">
+                    <div class="flex items-center space-x-3 text-[#102D25] mb-3">
+                        <div class="p-2 rounded-xl bg-slate-100 text-[#102D25] border border-slate-200">
+                            <i data-lucide="file-text" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-[#102D25]">Seguridad del Sistema y Exención de Responsabilidad (As-Is)</h3>
+                            <p class="text-xs text-[#64748B]">Límites de garantía y protección del sistema operativo</p>
+                        </div>
+                    </div>
+                    <div class="text-xs text-[#1E3A34] leading-relaxed space-y-2.5">
+                        <p>
+                            <strong class="text-[#102D25]">Protección de Archivos Esenciales:</strong> NosClean incorpora filtros de exclusión estricta para salvaguardar las carpetas críticas del sistema (<strong class="text-[#102D25]">C:\Windows</strong>, <strong class="text-[#102D25]">System32</strong> y sectores de arranque). Ninguna de estas carpetas puede ser eliminada mediante esta herramienta.
+                        </p>
+                        <p>
+                            <strong class="text-[#102D25]">Cláusula As-Is:</strong> El software se entrega «tal cual» (*as-is*), sin garantías expresas o implícitas. Aunque el sistema implementa rigurosas pruebas de seguridad y solicita confirmación antes de cualquier acción destructiva, el usuario es responsable de verificar los archivos que decide eliminar de forma permanente.
+                        </p>
+                    </div>
+                </div>
             </div>
         </section>
 
