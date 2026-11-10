@@ -4,12 +4,21 @@ import glob
 from typing import Dict, List, Any
 from app.utils import format_size, get_recycle_bin_info, empty_recycle_bin
 
+def is_admin() -> bool:
+    """Verifica si NosClean se está ejecutando con permisos de Administrador."""
+    try:
+        import ctypes
+        return ctypes.windll.shell32.IsUserAnAdmin() != 0
+    except Exception:
+        return False
+
 def get_junk_categories() -> List[Dict[str, Any]]:
     """Define las categorías de archivos temporales y basura del sistema."""
     user_local = os.environ.get('LOCALAPPDATA', '')
     user_roaming = os.environ.get('APPDATA', '')
     user_temp = os.environ.get('TEMP', '')
     system_root = os.environ.get('SystemRoot', r'C:\Windows')
+    admin_mode = is_admin()
 
     # Detectar todas las cachés de perfiles de Chrome (Default, Profile 1, Profile 2, etc.)
     chrome_paths = []
@@ -59,9 +68,10 @@ def get_junk_categories() -> List[Dict[str, Any]]:
         {
             "id": "system_temp",
             "name": "Temporales de Windows",
-            "description": "Archivos temporales del sistema operativo (C:\\Windows\\Temp).",
+            "description": "Archivos temporales del sistema operativo (C:\\Windows\\Temp)." + (" (Requiere ejecutar como Administrador para borrado total)" if not admin_mode else ""),
             "paths": [os.path.join(system_root, "Temp")],
-            "safe": True
+            "safe": True,
+            "requires_admin": not admin_mode
         },
         {
             "id": "crash_dumps",
@@ -94,9 +104,10 @@ def get_junk_categories() -> List[Dict[str, Any]]:
         {
             "id": "win_update_cache",
             "name": "Descargas de Windows Update",
-            "description": "Instaladores residuales de actualizaciones ya descargadas.",
+            "description": "Instaladores residuales de actualizaciones ya descargadas." + (" (Requiere ejecutar como Administrador para eliminar)" if not admin_mode else ""),
             "paths": [os.path.join(system_root, r"SoftwareDistribution\Download")],
-            "safe": True
+            "safe": True,
+            "requires_admin": not admin_mode
         },
         {
             "id": "recent_history",
@@ -162,6 +173,7 @@ def scan_junk() -> Dict[str, Any]:
             "name": cat["name"],
             "description": cat["description"],
             "safe": cat.get("safe", True),
+            "requires_admin": cat.get("requires_admin", False),
             "size_bytes": cat_bytes,
             "size_formatted": format_size(cat_bytes),
             "file_count": cat_files,

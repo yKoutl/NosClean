@@ -472,11 +472,15 @@ function renderJunkCategories(categories) {
         const checked = hasItems ? 'checked' : 'disabled';
         const opacity = hasItems ? 'opacity-100' : 'opacity-40';
 
+        const adminBadge = cat.requires_admin 
+            ? '<span class="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">Requiere Admin</span>' 
+            : '';
+
         item.innerHTML = `
             <div class="flex items-center space-x-3 ${opacity}">
                 <input type="checkbox" id="chk-junk-${cat.id}" data-id="${cat.id}" ${checked} class="w-4 h-4 text-[#087A45] rounded border-slate-300 focus:ring-[#087A45] cursor-pointer">
                 <div>
-                    <h4 class="text-sm font-semibold text-[#102D25]">${cat.name}</h4>
+                    <h4 class="text-sm font-semibold text-[#102D25] flex items-center">${cat.name}${adminBadge}</h4>
                     <p class="text-xs text-[#64748B]">${cat.description}</p>
                 </div>
             </div>
@@ -520,7 +524,11 @@ async function executeJunkClean(selectedCategories) {
     if (btn) btn.disabled = false;
 
     if (res && res.success) {
-        showToast(`¡Limpieza completada! Se liberaron ${res.freed_formatted} (${res.total_files_deleted} archivos eliminados)`, 'success');
+        if (res.total_skipped > 0) {
+            showToast(`¡Limpieza completada! Se liberaron ${res.freed_formatted} (${res.total_files_deleted} eliminados). ${res.total_skipped} archivos están en uso por programas abiertos y fueron protegidos de forma segura.`, 'success');
+        } else {
+            showToast(`¡Limpieza completada! Se liberaron ${res.freed_formatted} (${res.total_files_deleted} archivos eliminados)`, 'success');
+        }
         await scanJunk();
         await loadOverview();
         if (currentTab === 'advisor') loadAdvisor();
