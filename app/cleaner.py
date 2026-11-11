@@ -265,8 +265,9 @@ def clean_directory_contents(
     progress_end: float = None,
     step_label: str = ""
 ) -> (int, int, int):
-    """Limpia el contenido de un directorio en una sola pasada rápida (O(N)) reportando porcentaje dinámico."""
+    """Limpia el contenido de un directorio en una sola pasada rápida (O(N)), retirando atributos Read-Only si es necesario."""
     import time
+    import stat
     bytes_freed = 0
     files_deleted = 0
     skipped_count = 0
@@ -280,7 +281,7 @@ def clean_directory_contents(
         return 0, 0, 1
 
     total_top = max(1, len(top_entries))
-    deadline = time.monotonic() + 2.5
+    deadline = time.monotonic() + 3.0
 
     for idx, entry in enumerate(top_entries):
         if progress_start is not None and progress_end is not None:
@@ -297,13 +298,16 @@ def clean_directory_contents(
             if entry.is_file(follow_symlinks=False):
                 try:
                     size = entry.stat().st_size
-                    os.remove(entry.path)
+                    try:
+                        os.remove(entry.path)
+                    except PermissionError:
+                        os.chmod(entry.path, stat.S_IWRITE)
+                        os.remove(entry.path)
                     bytes_freed += size
                     files_deleted += 1
                 except (PermissionError, OSError):
                     skipped_count += 1
             elif entry.is_dir(follow_symlinks=False):
-                # Recorrer de abajo hacia arriba en una sola pasada rápida sin doble escaneo
                 for root_dir, dirs, files in os.walk(entry.path, topdown=False):
                     if time.monotonic() > deadline:
                         break
@@ -311,7 +315,11 @@ def clean_directory_contents(
                         fpath = os.path.join(root_dir, fname)
                         try:
                             fsize = os.path.getsize(fpath)
-                            os.remove(fpath)
+                            try:
+                                os.remove(fpath)
+                            except PermissionError:
+                                os.chmod(fpath, stat.S_IWRITE)
+                                os.remove(fpath)
                             bytes_freed += fsize
                             files_deleted += 1
                         except (PermissionError, OSError):
@@ -319,11 +327,19 @@ def clean_directory_contents(
                     for dname in dirs:
                         dpath = os.path.join(root_dir, dname)
                         try:
-                            os.rmdir(dpath)
+                            try:
+                                os.rmdir(dpath)
+                            except PermissionError:
+                                os.chmod(dpath, stat.S_IWRITE)
+                                os.rmdir(dpath)
                         except (PermissionError, OSError):
                             pass
                 try:
-                    os.rmdir(entry.path)
+                    try:
+                        os.rmdir(entry.path)
+                    except PermissionError:
+                        os.chmod(entry.path, stat.S_IWRITE)
+                        os.rmdir(entry.path)
                 except (PermissionError, OSError):
                     pass
         except Exception:
