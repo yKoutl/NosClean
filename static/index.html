@@ -78,7 +78,7 @@
                 animation: nosclean-loading 1.2s infinite ease-in-out;
             "></div>
         </div>
-        <span style="color: #94A3B8; font-size: 11px; margin-top: 16px; font-weight: 600;">Versión 5.0.3 &middot; 100% Local</span>
+        <span style="color: #94A3B8; font-size: 11px; margin-top: 16px; font-weight: 600;">Versión 5.0.7 &middot; 100% Local</span>
     </div>
     <script>
         // Salvaguarda autónoma: El splash jamás se congelará más de 1.4s
@@ -120,6 +120,14 @@
                 class="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-[#087A45] hover:bg-[#066237] text-white font-extrabold shadow-sm shadow-[#087A45]/30 transition-all transform active:scale-95 cursor-pointer">
                 <i data-lucide="zap" class="w-4 h-4 text-[#16B84E] fill-[#16B84E]" id="optimize-icon"></i>
                 <span class="text-xs font-black tracking-wide text-white" id="optimize-label">Optimizar PC</span>
+            </button>
+
+            <!-- PILDORA / BOTON DE MODO ADMINISTRADOR -->
+            <button onclick="openAdminModal()" id="btn-admin-status"
+                title="Haz clic para ejecutar como Administrador o ver los pasos"
+                class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 font-bold text-xs flex-shrink-0 shadow-sm transition-all cursor-pointer">
+                <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-amber-600 flex-shrink-0" id="admin-status-icon"></i>
+                <span id="admin-status-label" class="whitespace-nowrap font-bold">Ejecutar como Admin</span>
             </button>
 
             <div id="status-user-pill"
@@ -424,7 +432,7 @@
                             <i data-lucide="lightbulb" class="w-4 h-4 text-[#087A45]"></i>
                             <span class="text-[#102D25]">Ver Consejos</span>
                         </button>
-                        <button onclick="switchTab('cleaner'); scanJunkAuto();"
+                        <button onclick="switchTab('cleaner')"
                             class="btn-secondary px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center space-x-1.5 transition-all cursor-pointer">
                             <i data-lucide="trash-2" class="w-4 h-4 text-[#087A45]"></i>
                             <span class="text-[#102D25]">Escanear Basura</span>
@@ -495,13 +503,6 @@
                     </div>
                 </div>
             </div>
-                        <div class="w-full bg-[#E2E8F0] rounded-full h-2 mt-2.5 overflow-hidden">
-                            <div id="battery-bar" class="bg-[#16B84E] h-2 rounded-full transition-all duration-500"
-                                style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             <!-- Hard Drives Space Section -->
             <div>
@@ -528,7 +529,12 @@
                         </p>
                     </div>
                     <div class="flex items-center space-x-2.5 flex-wrap sm:flex-nowrap">
-                        <button onclick="scanJunk()" id="btn-scan-junk"
+                        <button onclick="openWindowsTool('cleanmgr')" title="Abrir Liberador de espacio en disco de Windows"
+                            class="btn-secondary px-3 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center space-x-1.5 transition-all shadow-sm cursor-pointer">
+                            <i data-lucide="disc" class="w-4 h-4 text-[#087A45]"></i>
+                            <span class="text-[#102D25]">Liberador Win</span>
+                        </button>
+                        <button onclick="scanJunk(true)" id="btn-scan-junk"
                             class="btn-secondary px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center space-x-1.5 transition-all shadow-sm cursor-pointer">
                             <i data-lucide="search" class="w-4 h-4 text-[#087A45]"></i>
                             <span class="text-[#102D25]">Analizar de Nuevo</span>
@@ -895,7 +901,7 @@
                     <div>
                         <div class="flex items-center space-x-2 text-[#087A45] text-xs font-bold uppercase tracking-wider mb-1">
                             <i data-lucide="shield-check" class="w-4 h-4 text-[#087A45]"></i>
-                            <span>Documentación Oficial &middot; NosClean v5.0.3</span>
+                            <span>Documentación Oficial &middot; NosClean v5.0.7</span>
                         </div>
                         <h2 class="text-xl sm:text-2xl font-black text-[#102D25]">Manual de Uso, Derechos y Marco Legal</h2>
                         <p class="text-xs sm:text-sm text-[#64748B] mt-1 font-medium">
@@ -1120,7 +1126,7 @@
                     <div class="space-y-2">
                         <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                             <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-100 text-[#087A45] border border-emerald-300">
-                                Versión 5.0.3
+                                Versión 5.0.7
                             </span>
                             <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#F4F7F5] text-[#102D25] border border-slate-200">
                                 Código Abierto &middot; Open Source
@@ -1358,7 +1364,7 @@
                 <div>
                     <div class="flex items-center space-x-2">
                         <h3 class="text-lg sm:text-xl font-black text-[#102D25]">¡Bienvenido a NosClean!</h3>
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-[#087A45] border border-emerald-300">v5.0.3</span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-[#087A45] border border-emerald-300">v5.0.7</span>
                     </div>
                     <p class="text-xs text-[#64748B] mt-0.5">Suite de optimización, limpieza segura y aceleración para Windows</p>
                 </div>
@@ -1412,7 +1418,7 @@
         </div>
     </div>
 
-    <script src="/static/js/app.js?v=15"></script>
+    <script src="/static/js/app.js?v=17"></script>
     <script>
         lucide.createIcons();
     </script>
@@ -1508,6 +1514,127 @@
                     <i data-lucide="check" class="w-4 h-4"></i>
                     <span>¡Entendido!</span>
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Modo Administrador (Opción en 1 Clic + Pasos Manuales + Continuar sin Admin o Cerrar) -->
+    <div id="admin-modal"
+        class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="glass-panel bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 border border-slate-200 shadow-2xl relative text-left">
+            <!-- Botón cerrar (X) en esquina -->
+            <button onclick="closeAdminModal()" class="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer" title="Continuar sin Administrador">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+
+            <!-- VISTA A: Cuando está en Modo Estándar (Sin Administrador) -->
+            <div id="admin-modal-standard-body">
+                <div class="flex items-center space-x-3.5 mb-4">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center p-2 flex-shrink-0 shadow-sm text-amber-600">
+                        <i data-lucide="shield-alert" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <h3 class="text-lg sm:text-xl font-black text-[#102D25]">Ejecutar como Administrador</h3>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300">Recomendado</span>
+                        </div>
+                        <p class="text-xs text-[#64748B] mt-0.5 font-medium">Desbloquea el 100% de las funciones de limpieza profunda de Windows</p>
+                    </div>
+                </div>
+
+                <div class="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200 mb-3.5">
+                    <p class="text-xs text-[#1E3A34] leading-relaxed">
+                        Actualmente estás en <strong class="text-[#102D25]">Modo Estándar</strong>. Para borrar al 100% los <strong class="text-[#087A45]">Temporales de Windows (C:\Windows\Temp)</strong>, la caché de <strong class="text-[#087A45]">Windows Update</strong> y archivos protegidos, activa los permisos de Administrador:
+                    </p>
+                </div>
+
+                <!-- Opción 1: Automática con 1 Clic -->
+                <div class="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200 mb-3.5">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs font-extrabold text-[#087A45] flex items-center space-x-1.5">
+                            <i data-lucide="zap" class="w-4 h-4"></i>
+                            <span>Opción 1: Automática en 1 Clic (Más Rápida)</span>
+                        </span>
+                    </div>
+                    <p class="text-[11px] text-[#64748B] mb-3 leading-relaxed">
+                        Pulsa el botón verde de abajo y acepta el aviso de Windows (<strong class="text-[#102D25]">"Sí"</strong>). NosClean se reiniciará solo en modo Administrador.
+                    </p>
+                    <button onclick="restartAsAdmin()" id="btn-restart-admin-now"
+                        class="w-full py-2.5 px-4 rounded-xl bg-[#087A45] hover:bg-[#065F35] text-white text-xs sm:text-sm font-extrabold shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-white"></i>
+                        <span class="text-white" id="btn-restart-admin-label">Ejecutar como Administrador Ahora</span>
+                    </button>
+                </div>
+
+                <!-- Opción 2: Pasos Manuales Detallados -->
+                <div class="p-3.5 rounded-2xl bg-[#F4F7F5] border border-slate-200 mb-4">
+                    <div class="flex items-center space-x-1.5 text-[#102D25] font-bold text-xs mb-2">
+                        <i data-lucide="list-ordered" class="w-4 h-4 text-[#087A45]"></i>
+                        <span>Opción 2: Pasos para abrirlo manualmente</span>
+                    </div>
+                    <ol class="text-xs text-[#64748B] space-y-1.5 list-decimal list-inside leading-relaxed">
+                        <li>Cierra esta ventana pulsando el botón <strong class="text-rose-700">"Cerrar Programa"</strong> de abajo.</li>
+                        <li>Busca el icono de <strong class="text-[#102D25]">NosClean</strong> en tu Escritorio o en su carpeta.</li>
+                        <li>Haz <strong class="text-[#102D25]">clic derecho</strong> sobre el icono y elige <strong class="text-[#087A45]">"Ejecutar como administrador"</strong>.</li>
+                        <li>En el cuadro de confirmación de Windows, haz clic en <strong class="text-[#102D25]">"Sí"</strong>.</li>
+                    </ol>
+                </div>
+
+                <!-- Footer con casilla y botones Continuar sin Admin / Cerrar -->
+                <div class="pt-3.5 border-t border-slate-200 flex flex-col gap-3">
+                    <label class="flex items-center space-x-2 text-xs text-[#64748B] cursor-pointer select-none">
+                        <input type="checkbox" id="admin-dont-show" class="w-4 h-4 rounded text-[#087A45] focus:ring-[#16B84E] border-slate-300">
+                        <span>No mostrar este aviso automáticamente al iniciar</span>
+                    </label>
+                    <div class="flex flex-col sm:flex-row items-center justify-end gap-2">
+                        <button onclick="shutdownFromAdminModal()"
+                            class="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition-all flex items-center justify-center space-x-1.5 cursor-pointer">
+                            <i data-lucide="power" class="w-3.5 h-3.5 text-rose-600"></i>
+                            <span>Cerrar Programa</span>
+                        </button>
+                        <button onclick="closeAdminModal()"
+                            class="btn-secondary w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 cursor-pointer">
+                            <span>Continuar sin Administrador</span>
+                            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VISTA B: Cuando YA está en Modo Administrador -->
+            <div id="admin-modal-active-body" class="hidden">
+                <div class="flex items-center space-x-3.5 mb-4">
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center p-2 flex-shrink-0 shadow-sm text-[#087A45]">
+                        <i data-lucide="shield-check" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <h3 class="text-lg sm:text-xl font-black text-[#102D25]">Modo Administrador Activo</h3>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-[#087A45] border border-emerald-300">100% Completo</span>
+                        </div>
+                        <p class="text-xs text-[#64748B] mt-0.5 font-medium">Todos los permisos de sistema están habilitados y optimizados</p>
+                    </div>
+                </div>
+
+                <div class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 my-4 space-y-2">
+                    <div class="flex items-center space-x-2 text-[#087A45] font-bold text-xs">
+                        <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                        <span>Funciones avanzadas desbloqueadas:</span>
+                    </div>
+                    <ul class="text-xs text-[#1E3A34] space-y-1.5 list-disc list-inside leading-relaxed">
+                        <li>Limpieza completa de <strong class="text-[#102D25]">C:\Windows\Temp</strong>.</li>
+                        <li>Depuración de instaladores antiguos de <strong class="text-[#102D25]">Windows Update</strong>.</li>
+                        <li>Optimización inteligente de memoria RAM protegiendo procesos críticos de Windows.</li>
+                    </ul>
+                </div>
+
+                <div class="pt-3 border-t border-slate-100 flex justify-end">
+                    <button onclick="closeAdminModal()"
+                        class="px-5 py-2.5 rounded-xl bg-[#087A45] hover:bg-[#065F35] text-white text-xs sm:text-sm font-bold shadow-md transition-all flex items-center space-x-1.5 cursor-pointer">
+                        <i data-lucide="check" class="w-4 h-4 text-white"></i>
+                        <span class="text-white">¡Entendido!</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>

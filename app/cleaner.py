@@ -119,33 +119,81 @@ def get_junk_categories() -> List[Dict[str, Any]]:
     ]
     return categories
 
-def scan_directory_size(path: str) -> (int, int):
-    """Calcula recursivamente el tamaño en bytes y cantidad de archivos en un directorio."""
+def _is_protected_temp_entry(entry_name: str, entry_path: str) -> bool:
+    """
+    Protege las carpetas activas de PyInstaller (_MEIxxxxxx) y de WebView2/pywebview
+    para evitar que NosClean escanee o intente borrar sus propios binarios en ejecución.
+    """
+    import sys
+    name_low = entry_name.lower()
+    if name_low.startswith("_mei") or "pywebview" in name_low or "ebwebview" in name_low or "nosclean" in name_low:
+        return True
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        try:
+            norm_entry = os.path.normcase(os.path.abspath(entry_path))
+            norm_mei = os.path.normcase(os.path.abspath(meipass))
+            if norm_entry == norm_mei or norm_entry.startswith(norm_mei + os.sep):
+                return True
+        except Exception:
+            pass
+    return False
+
+def scan_directory_size(path: str, max_seconds: float = 1.2, max_files: int = 15000) -> (int, int):
+    """
+    Calcula de forma iterativa y ultrarrápida el tamaño en bytes y cantidad de archivos.
+    Incluye un presupuesto máximo de tiempo (max_seconds) y límite de archivos para que,
+    al ejecutarse como Administrador sobre carpetas masivas como Windows Update o Temp,
+    nunca congele el hilo principal ni ralentice la interfaz.
+    """
+    import time
     total_size = 0
     file_count = 0
     if not os.path.exists(path):
         return 0, 0
 
-    try:
-        with os.scandir(path) as it:
-            for entry in it:
-                try:
-                    if entry.is_file(follow_symlinks=False):
-                        total_size += entry.stat().st_size
-                        file_count += 1
-                    elif entry.is_dir(follow_symlinks=False):
-                        s, c = scan_directory_size(entry.path)
-                        total_size += s
-                        file_count += c
-                except (PermissionError, FileNotFoundError, OSError):
-                    continue
-    except (PermissionError, FileNotFoundError, OSError):
-        pass
+    deadline = time.perf_counter() + max_seconds
+    stack = [path]
+    is_root = True
+
+    while stack:
+        if time.perf_counter() > deadline or file_count >= max_files:
+            break
+        current_dir = stack.pop()
+        try:
+            with os.scandir(current_dir) as it:
+                for entry in it:
+                    if is_root and _is_protected_temp_entry(entry.name, entry.path):
+                        continue
+                    try:
+                        if entry.is_file(follow_symlinks=False):
+                            total_size += entry.stat().st_size
+                            file_count += 1
+                            if file_count >= max_files:
+                                break
+                        elif entry.is_dir(follow_symlinks=False):
+                            stack.append(entry.path)
+                    except (PermissionError, FileNotFoundError, OSError):
+                        continue
+        except (PermissionError, FileNotFoundError, OSError):
+            pass
+        is_root = False
 
     return total_size, file_count
 
-def scan_junk() -> Dict[str, Any]:
+_JUNK_SCAN_CACHE = {"timestamp": 0.0, "data": None}
+
+def invalidate_junk_cache():
+    _JUNK_SCAN_CACHE["timestamp"] = 0.0
+    _JUNK_SCAN_CACHE["data"] = None
+
+def scan_junk(force_refresh: bool = False) -> Dict[str, Any]:
     """Escanea todas las categorías y devuelve el resumen sin borrar nada."""
+    import time
+    now = time.time()
+    if not force_refresh and _JUNK_SCAN_CACHE["data"] is not None and (now - _JUNK_SCAN_CACHE["timestamp"] < 4.0):
+        return _JUNK_SCAN_CACHE["data"]
+
     categories = get_junk_categories()
     results = []
     grand_total_bytes = 0
@@ -180,20 +228,24 @@ def scan_junk() -> Dict[str, Any]:
             "exists": cat_bytes > 0 or cat_files > 0
         })
 
-    return {
+    res_data = {
+        "is_admin": is_admin(),
         "categories": results,
         "total_bytes": grand_total_bytes,
         "total_formatted": format_size(grand_total_bytes),
         "total_files": grand_total_files
     }
+    _JUNK_SCAN_CACHE["timestamp"] = time.time()
+    _JUNK_SCAN_CACHE["data"] = res_data
+    return res_data
 
-def clean_directory_contents(path: str) -> (int, int, int):
-    """Limpia el contenido de un directorio sin eliminar el directorio raíz."""
+def clean_directory_contents(path: str, _depth: int = 0) -> (int, int, int):
+    """Limpia el contenido de un directorio sin eliminar el directorio raíz ni carpetas protegidas de NosClean."""
     bytes_freed = 0
     files_deleted = 0
     skipped_count = 0
 
-    if not os.path.exists(path):
+    if not os.path.exists(path) or _depth > 6:
         return 0, 0, 0
 
     try:
@@ -202,6 +254,8 @@ def clean_directory_contents(path: str) -> (int, int, int):
         return 0, 0, 1
 
     for entry in entries:
+        if _depth == 0 and _is_protected_temp_entry(entry.name, entry.path):
+            continue
         try:
             if entry.is_file(follow_symlinks=False):
                 try:
@@ -212,13 +266,13 @@ def clean_directory_contents(path: str) -> (int, int, int):
                 except (PermissionError, OSError):
                     skipped_count += 1
             elif entry.is_dir(follow_symlinks=False):
-                dir_size, dir_files = scan_directory_size(entry.path)
+                dir_size, dir_files = scan_directory_size(entry.path, max_seconds=0.4, max_files=3000)
                 try:
                     shutil.rmtree(entry.path, ignore_errors=False)
                     bytes_freed += dir_size
                     files_deleted += dir_files
                 except Exception:
-                    bf, fd, sc = clean_directory_contents(entry.path)
+                    bf, fd, sc = clean_directory_contents(entry.path, _depth + 1)
                     bytes_freed += bf
                     files_deleted += fd
                     skipped_count += (sc + 1)
@@ -288,6 +342,7 @@ def clean_selected_categories(selected_ids: List[str]) -> Dict[str, Any]:
                 "status": f"Limpieza completada ({cat_skipped} omitidos en uso)" if cat_skipped > 0 else "Limpieza completa"
             })
 
+    invalidate_junk_cache()
     return {
         "success": True,
         "freed_bytes": total_freed_bytes,
@@ -297,33 +352,49 @@ def clean_selected_categories(selected_ids: List[str]) -> Dict[str, Any]:
         "details": details
     }
 
+# Procesos críticos del sistema y del propio motor gráfico de NosClean que jamás deben paginarse a disco
+PROTECTED_SYSTEM_PROCS = {
+    "system", "registry", "smss.exe", "csrss.exe", "wininit.exe",
+    "services.exe", "lsass.exe", "svchost.exe", "dwm.exe", "explorer.exe",
+    "fontdrvhost.exe", "wmiprvse.exe", "searchindexer.exe", "searchhost.exe",
+    "startmenuexperiencehost.exe", "shellexperiencehost.exe", "sihost.exe",
+    "taskhostw.exe", "ctfmon.exe", "audiodg.exe", "spoolsv.exe",
+    "msmpeng.exe", "securityhealthservice.exe", "nosclean.exe",
+    "msedgewebview2.exe", "python.exe", "pythonw.exe"
+}
+
 def quick_optimize() -> Dict[str, Any]:
     """Optimización rápida en 1 clic:
-    1. Vacía la memoria de procesos inactivos (EmptyWorkingSet).
+    1. Vacía la memoria de procesos inactivos de usuario (excluyendo servicios críticos de Windows y NosClean).
     2. Limpia temporales seguros de usuario y cachés de navegadores.
     3. Retorna estadísticas precisas antes y después."""
     import psutil
     import ctypes
     
     mem_before = psutil.virtual_memory()
+    current_pid = os.getpid()
     
-    # 1. Optimizar RAM
+    # 1. Optimizar RAM de forma segura (sin paginar procesos críticos de Windows ni WebView2 cuando es Admin)
     trimmed_procs = 0
     try:
         psapi = ctypes.windll.psapi
         kernel32 = ctypes.windll.kernel32
         PROCESS_SET_QUOTA = 0x0100
         PROCESS_QUERY_INFORMATION = 0x0400
-        for p in psutil.process_iter(['pid']):
+        for p in psutil.process_iter(['pid', 'name']):
             try:
-                h = kernel32.OpenProcess(PROCESS_SET_QUOTA | PROCESS_QUERY_INFORMATION, False, p.info['pid'])
+                pid = p.info['pid']
+                pname = (p.info['name'] or '').lower()
+                if pid <= 4 or pid == current_pid or pname in PROTECTED_SYSTEM_PROCS:
+                    continue
+                h = kernel32.OpenProcess(PROCESS_SET_QUOTA | PROCESS_QUERY_INFORMATION, False, pid)
                 if h:
                     psapi.EmptyWorkingSet(h)
                     kernel32.CloseHandle(h)
                     trimmed_procs += 1
-            except:
+            except Exception:
                 pass
-    except:
+    except Exception:
         pass
         
     mem_after = psutil.virtual_memory()

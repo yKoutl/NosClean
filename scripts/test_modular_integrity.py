@@ -121,6 +121,11 @@ def run_tests():
     assert_test("NosClean" in html_code, "Título y branding 'NosClean' presente en index.html")
     assert_test("static/logo.png" in html_code, "Vinculación de logo oficial en index.html")
     assert_test("advisor-score" in html_code, "Elemento dinámico de puntaje de salud presente")
+    assert_test("admin-modal" in html_code and "btn-admin-status" in html_code, "Modal y botón de Modo Administrador presentes en index.html")
+    assert_test(html_code.count('id="battery-bar"') == 1, "Sin IDs duplicados de battery-bar en index.html")
+    assert_test("openAdminModal" in js_code and "restartAsAdmin" in js_code, "Funciones de Modo Administrador implementadas en app.js")
+    assert_test("askUninstallApp" in js_code and "askKillProcess" in js_code, "Funciones de desinstalación directa y cierre de procesos conectadas en app.js")
+    assert_test("scanJunkAuto" not in js_code and "scanJunkAuto" not in html_code, "Código muerto scanJunkAuto eliminado de HTML y JS")
 
     # -------------------------------------------------------------
     # NIVEL 4: Funciones Puras y Lógica de Negocio
@@ -132,15 +137,25 @@ def run_tests():
     assert_test(format_size(1048576) == "1.00 MB", "format_size(1048576) == '1.00 MB'")
     assert_test(format_size(1073741824) == "1.00 GB", "format_size(1073741824) == '1.00 GB'")
 
-    from app.cleaner import scan_junk
+    from app.cleaner import scan_junk, _is_protected_temp_entry
+    assert_test(_is_protected_temp_entry("_MEI12345", r"C:\Temp\_MEI12345") is True, "Protección de carpeta temporal PyInstaller (_MEI)")
+    assert_test(_is_protected_temp_entry("EBWebView", r"C:\Temp\EBWebView") is True, "Protección de carpeta temporal WebView2")
     junk = scan_junk()
     assert_test("categories" in junk and isinstance(junk["categories"], list), "scan_junk() retorna categorías estructuradas")
     assert_test("total_bytes" in junk and junk["total_bytes"] >= 0, "scan_junk() calcula total_bytes >= 0")
+    assert_test("is_admin" in junk and isinstance(junk["is_admin"], bool), "scan_junk() reporta estado booleano is_admin")
 
     from app.advisor import generate_pc_advice
     advice = generate_pc_advice()
     assert_test("health_score" in advice and 0 <= advice["health_score"] <= 100, f"generate_pc_advice() score en rango [0, 100]: {advice.get('health_score')}")
     assert_test("recommendations" in advice and isinstance(advice["recommendations"], list), "generate_pc_advice() genera lista de recomendaciones")
+    assert_test("golden_rules" not in advice, "Campo muerto golden_rules eliminado de generate_pc_advice()")
+
+    from app.auditor import kill_process_by_pid
+    ok_self, _ = kill_process_by_pid(os.getpid())
+    assert_test(ok_self is False, "kill_process_by_pid() protege el propio proceso de NosClean")
+    ok_sys, _ = kill_process_by_pid(4)
+    assert_test(ok_sys is False, "kill_process_by_pid() protege procesos críticos del sistema (PID 4)")
 
     # -------------------------------------------------------------
     # NIVEL 5: Integración de Endpoints FastAPI (TestClient & Integración)

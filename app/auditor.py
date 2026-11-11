@@ -3,10 +3,11 @@ import platform
 import time
 import winreg
 import psutil
-from app.utils import format_size
+from app.utils import format_size, is_admin
 
 _CACHED_CPU_NAME = None
 _CACHED_GPUS = None
+_OVERVIEW_CACHE = {"timestamp": 0.0, "data": None}
 
 def get_cpu_info():
     """Obtiene el nombre y especificaciones detalladas del procesador sin lentitud."""
@@ -80,10 +81,15 @@ def get_gpu_info():
     _CACHED_GPUS = gpus
     return _CACHED_GPUS
 
-def get_system_overview():
+def get_system_overview(force_refresh: bool = False):
     """Genera la auditoría de especificaciones del sistema al instante."""
+    now = time.time()
+    if not force_refresh and _OVERVIEW_CACHE["data"] is not None and (now - _OVERVIEW_CACHE["timestamp"] < 1.5):
+        return _OVERVIEW_CACHE["data"]
+
     mem = psutil.virtual_memory()
     swap = psutil.swap_memory()
+    admin_status = is_admin()
     
     drives = []
     for part in psutil.disk_partitions(all=False):
@@ -126,7 +132,8 @@ def get_system_overview():
         except Exception:
             pass
 
-    return {
+    data = {
+        "is_admin": admin_status,
         "os": {
             "system": platform.system(),
             "release": platform.release(),
@@ -134,6 +141,7 @@ def get_system_overview():
             "architecture": platform.architecture()[0],
             "hostname": platform.node(),
             "user": os.environ.get('USERNAME', 'Usuario'),
+            "is_admin": admin_status,
             "uptime": uptime_str,
             "boot_time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(boot_time))
         },
@@ -156,21 +164,42 @@ def get_system_overview():
         "drives": drives,
         "battery": battery_info
     }
+    _OVERVIEW_CACHE["timestamp"] = time.time()
+    _OVERVIEW_CACHE["data"] = data
+    return data
+
+CRITICAL_WINDOWS_PROCS = {
+    "system", "registry", "smss.exe", "csrss.exe", "wininit.exe",
+    "services.exe", "lsass.exe", "svchost.exe", "dwm.exe", "explorer.exe",
+    "fontdrvhost.exe", "wmiprvse.exe", "searchindexer.exe", "searchhost.exe",
+    "startmenuexperiencehost.exe", "shellexperiencehost.exe", "sihost.exe",
+    "taskhostw.exe", "ctfmon.exe", "audiodg.exe", "spoolsv.exe",
+    "msmpeng.exe", "securityhealthservice.exe", "nosclean.exe",
+    "msedgewebview2.exe", "winlogon.exe"
+}
 
 def get_top_processes(limit=10):
     """Obtiene los procesos más demandantes en memoria y CPU."""
     procs = []
+    current_pid = os.getpid()
     for p in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent', 'memory_info']):
         try:
             info = p.info
+            pid = info['pid']
+            if pid <= 4:
+                continue
+            pname = info['name'] or "Proceso"
+            pname_low = pname.lower()
             mem_rss = info['memory_info'].rss if info['memory_info'] else 0
+            is_protected = (pid == current_pid) or (pname_low in CRITICAL_WINDOWS_PROCS)
             procs.append({
-                "pid": info['pid'],
-                "name": info['name'],
+                "pid": pid,
+                "name": pname,
                 "cpu_percent": info['cpu_percent'] or 0.0,
                 "memory_percent": round(info['memory_percent'] or 0.0, 1),
                 "memory_bytes": mem_rss,
-                "memory_formatted": format_size(mem_rss)
+                "memory_formatted": format_size(mem_rss),
+                "can_terminate": not is_protected
             })
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
@@ -182,3 +211,26 @@ def get_top_processes(limit=10):
         "by_memory": by_mem,
         "by_cpu": by_cpu
     }
+
+def kill_process_by_pid(pid: int):
+    """Finaliza un proceso de usuario de forma segura protegiendo procesos críticos de Windows y NosClean."""
+    if pid <= 4 or pid == os.getpid():
+        return False, "Este proceso pertenece al núcleo del sistema o a NosClean y está protegido."
+    try:
+        proc = psutil.Process(pid)
+        pname = (proc.name() or "").lower()
+        if pname in CRITICAL_WINDOWS_PROCS:
+            return False, f"El proceso '{proc.name()}' es un componente crítico de Windows y no debe cerrarse."
+        proc_display = proc.name()
+        proc.terminate()
+        try:
+            proc.wait(timeout=1.5)
+        except psutil.TimeoutExpired:
+            proc.kill()
+        return True, f"Proceso '{proc_display}' (PID {pid}) finalizado correctamente."
+    except psutil.NoSuchProcess:
+        return False, "El proceso ya fue cerrado."
+    except psutil.AccessDenied:
+        return False, "Windows denegó el cierre: este proceso requiere ejecutar NosClean como Administrador."
+    except Exception as e:
+        return False, f"No se pudo finalizar el proceso: {str(e)}"

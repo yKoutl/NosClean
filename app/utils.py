@@ -202,4 +202,63 @@ def create_windows_shortcut(target_type: str = "desktop"):
     except Exception as e:
         return False, f"Error al generar acceso directo: {str(e)}", {}
 
+def is_admin() -> bool:
+    """Verifica si NosClean se está ejecutando con permisos de Administrador."""
+    try:
+        return ctypes.windll.shell32.IsUserAnAdmin() != 0
+    except Exception:
+        return False
+
+def restart_as_admin():
+    """
+    Solicita elevación UAC de Windows (runas) para reiniciar NosClean como Administrador.
+    Retorna (success, message, data).
+    """
+    import sys
+    if is_admin():
+        return True, "NosClean ya se está ejecutando con permisos de Administrador.", {"already_admin": True}
+
+    try:
+        if getattr(sys, 'frozen', False):
+            target_exe = sys.executable
+            base_dir = os.path.dirname(target_exe)
+            params = "--elevated-restart"
+        else:
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            exe_candidate = os.path.join(base_dir, "NosClean.exe")
+            main_script = os.path.join(base_dir, "main.py")
+            # Si se está ejecutando desde Python, relanzar con pythonw/python main.py para usar el código actual
+            py_dir = os.path.dirname(sys.executable)
+            pythonw = os.path.join(py_dir, "pythonw.exe")
+            if os.path.exists(pythonw):
+                target_exe = pythonw
+            elif os.path.exists(sys.executable):
+                target_exe = sys.executable
+            elif os.path.exists(exe_candidate):
+                target_exe = exe_candidate
+            else:
+                target_exe = sys.executable
+
+            if target_exe.lower().endswith("nosclean.exe"):
+                params = "--elevated-restart"
+            else:
+                params = f'"{main_script}" --elevated-restart'
+
+        res = ctypes.windll.shell32.ShellExecuteW(
+            None,
+            "runas",
+            target_exe,
+            params,
+            base_dir,
+            1
+        )
+        # En Windows API, ShellExecuteW retorna un valor > 32 si tuvo éxito
+        if res > 32:
+            return True, "Abriendo NosClean con permisos de Administrador...", {"restarting": True}
+        else:
+            return False, "No se otorgaron los permisos en la ventana de Windows. Puedes intentarlo de nuevo, seguir los pasos manuales o continuar sin Administrador.", {"cancelled": True, "code": res}
+    except Exception as e:
+        return False, f"No se pudo iniciar como Administrador: {str(e)}", {"error": str(e)}
+
+
 

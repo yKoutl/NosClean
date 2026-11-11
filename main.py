@@ -12,20 +12,20 @@ from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List
 
-from app.auditor import get_system_overview, get_top_processes
+from app.auditor import get_system_overview, get_top_processes, kill_process_by_pid
 from app.cleaner import scan_junk, clean_selected_categories, quick_optimize
-from app.storage import scan_heavy_files, analyze_folder_breakdown, COMMON_PATHS
-from app.software import get_installed_programs, get_startup_applications
+from app.storage import scan_heavy_files, COMMON_PATHS
+from app.software import get_installed_programs, get_startup_applications, launch_uninstaller
 from app.organizer import scan_target_folder, organize_files
 from app.advisor import generate_pc_advice
-from app.utils import open_in_explorer, recycle_path, open_windows_app, create_windows_shortcut
+from app.utils import open_in_explorer, recycle_path, open_windows_app, create_windows_shortcut, restart_as_admin, is_admin
 
 app = FastAPI(
     title="NosClean",
     description="Panel integral para auditar, limpiar y organizar tu PC en Windows.",
-    version="5.0.3"
+    version="5.0.7"
 )
 
 # Servir archivos estáticos (compatible con empaquetado PyInstaller y ejecución normal)
@@ -75,6 +75,16 @@ def api_system_overview():
 def api_system_processes(limit: int = 15):
     return get_top_processes(limit=limit)
 
+class KillProcessRequest(BaseModel):
+    pid: int
+
+@app.post("/api/system/kill-process")
+def api_system_kill_process(req: KillProcessRequest):
+    success, msg = kill_process_by_pid(req.pid)
+    if not success:
+        raise HTTPException(status_code=400, detail=msg)
+    return {"success": True, "message": msg}
+
 # ================== RUTAS DE LIMPIEZA ==================
 @app.post("/api/system/optimize")
 def api_system_optimize():
@@ -90,8 +100,8 @@ def api_system_shutdown():
     return {"success": True, "message": "Servidor cerrado. Consumo actual: 0 MB."}
 
 @app.get("/api/junk/scan")
-def api_junk_scan():
-    return scan_junk()
+def api_junk_scan(force: bool = False):
+    return scan_junk(force_refresh=force)
 
 class CleanRequest(BaseModel):
     categories: List[str]
@@ -113,16 +123,21 @@ def api_storage_heavy_files(
 ):
     return scan_heavy_files(path, min_size_mb, max_results)
 
-@app.get("/api/storage/folder-breakdown")
-def api_storage_folder_breakdown(
-    path: str = Query(..., description="Ruta de la carpeta base")
-):
-    return analyze_folder_breakdown(path)
-
 # ================== RUTAS DE SOFTWARE ==================
 @app.get("/api/software/installed")
 def api_software_installed():
     return get_installed_programs()
+
+class UninstallAppRequest(BaseModel):
+    uninstall_command: str = ""
+    name: str = ""
+
+@app.post("/api/software/uninstall")
+def api_software_uninstall(req: UninstallAppRequest):
+    success, msg = launch_uninstaller(req.uninstall_command, req.name)
+    if not success:
+        raise HTTPException(status_code=400, detail=msg)
+    return {"success": True, "message": msg}
 
 @app.get("/api/software/startup")
 def api_software_startup():
@@ -179,6 +194,19 @@ def api_action_create_shortcut(req: ShortcutRequest):
         raise HTTPException(status_code=400, detail=msg)
     return {"success": True, "message": msg, "data": data}
 
+@app.post("/api/actions/restart-admin")
+def api_action_restart_admin():
+    success, msg, data = restart_as_admin()
+    if not success:
+        return JSONResponse(status_code=200, content={"success": False, "message": msg, "data": data})
+    if data.get("restarting"):
+        import threading, time
+        def delayed_exit():
+            time.sleep(0.25)
+            os._exit(0)
+        threading.Thread(target=delayed_exit, daemon=True).start()
+    return {"success": True, "message": msg, "data": data}
+
 def launch_browser():
     import time, subprocess
     time.sleep(0.7)
@@ -210,7 +238,7 @@ if __name__ == "__main__":
 
     # Registrar AppUserModelID oficial para que Windows agrupe el proceso bajo NosClean y muestre NosClean.ico
     try:
-        myappid = 'NosClean.OptimizationSuite.v5.0.3'
+        myappid = 'NosClean.OptimizationSuite.v5.0.7'
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
     except Exception:
         pass
@@ -222,6 +250,13 @@ if __name__ == "__main__":
                 return False
             except OSError:
                 return True
+
+    # Si viene de un reinicio elevado (--elevated-restart), esperar a que la instancia anterior libere el puerto 8000
+    if "--elevated-restart" in sys.argv:
+        for _ in range(45):
+            if not is_port_in_use(8000):
+                break
+            time.sleep(0.1)
 
     ico_path = os.path.join(BASE_DIR, "NosClean.ico")
     if not os.path.exists(ico_path):
@@ -264,15 +299,31 @@ if __name__ == "__main__":
 
     # Lanzar la aplicación en ventana de escritorio nativa WebView2 (icono verde propio, cero Edge)
     try:
+        # Evitar degradación de GPU / Sandbox cuando se ejecuta con permisos de Administrador
+        os.environ["WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"] = (
+            "--disable-features=RendererCodeIntegrity,ElasticOverscroll --disable-gpu-sandbox"
+        )
+        wv_storage = os.path.join(
+            os.environ.get("LOCALAPPDATA", os.environ.get("TEMP", ".")),
+            "NosClean",
+            "WebView2Cache"
+        )
+        os.makedirs(wv_storage, exist_ok=True)
+
         import webview
+        window_title = 'NosClean (Administrador)' if is_admin() else 'NosClean'
         window = webview.create_window(
-            title='NosClean',
+            title=window_title,
             url='http://127.0.0.1:8000',
             width=1280,
             height=820,
             min_size=(960, 640)
         )
-        webview.start(icon=ico_path if os.path.exists(ico_path) else None)
+        webview.start(
+            icon=ico_path if os.path.exists(ico_path) else None,
+            private_mode=False,
+            storage_path=wv_storage
+        )
         os._exit(0)
     except BaseException:
         # Fallback ultra-resiliente: si WebView2 o DLLs fallan en otra PC, abrir en navegador y mantener servidor vivo

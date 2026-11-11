@@ -1,6 +1,6 @@
 import os
+import subprocess
 import winreg
-import glob
 from typing import List, Dict, Any
 from app.utils import format_size
 
@@ -185,4 +185,28 @@ def get_startup_applications() -> List[Dict[str, Any]]:
                 pass
 
     return startup_items
+
+def launch_uninstaller(uninstall_cmd: str, app_name: str = ""):
+    """
+    Ejecuta el desinstalador oficial del programa registrado en Windows,
+    o abre el panel de Aplicaciones de Windows si el comando no está disponible.
+    """
+    cmd = (uninstall_cmd or "").strip()
+    if not cmd:
+        try:
+            subprocess.Popen("start ms-settings:appsfeatures", shell=True)
+            return True, f"Abriendo panel de Aplicaciones de Windows para desinstalar {app_name or 'el programa'}."
+        except Exception as e:
+            return False, str(e)
+
+    try:
+        subprocess.Popen(cmd, shell=True)
+        return True, f"Desinstalador de '{app_name or 'programa'}' iniciado."
+    except Exception:
+        try:
+            subprocess.Popen("start ms-settings:appsfeatures", shell=True)
+            return True, f"Abriendo panel de Aplicaciones de Windows para {app_name or 'el programa'}."
+        except Exception as e:
+            return False, str(e)
+
 

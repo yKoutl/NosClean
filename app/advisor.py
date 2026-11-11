@@ -1,11 +1,9 @@
 import os
-import psutil
-from typing import Dict, List, Any
+from typing import Dict, Any
 from app.auditor import get_system_overview
 from app.cleaner import scan_junk
-from app.software import get_installed_programs, get_startup_applications
+from app.software import get_startup_applications
 from app.organizer import scan_target_folder
-from app.utils import format_size
 
 # Lista de programas de inicio que típicamente retrasan el arranque y son seguros de desactivar
 OPTIONAL_STARTUP_APPS = [
@@ -135,7 +133,9 @@ def generate_pc_advice() -> Dict[str, Any]:
         })
 
     # 5. CONSEJO DE MEMORIA RAM
-    ram_pct = system.get("ram", {}).get("percent_used", 0)
+    ram_info = system.get("ram", {})
+    ram_pct = ram_info.get("percent_used", 0)
+    ram_total_fmt = ram_info.get("total_formatted", "RAM")
     if ram_pct >= 80:
         score -= 10
         recommendations.append({
@@ -144,32 +144,26 @@ def generate_pc_advice() -> Dict[str, Any]:
             "badge": "Memoria",
             "color": "rose",
             "title": f"Uso elevado de Memoria RAM ({ram_pct}%)",
-            "description": "Tu PC está usando la mayor parte de sus 16 GB de RAM. Cierra pestañas pesadas del navegador o aplicaciones en segundo plano que no estés utilizando.",
+            "description": f"Tu PC está usando la mayor parte de sus {ram_total_fmt} de RAM. Cierra pestañas pesadas del navegador o aplicaciones en segundo plano que no estés utilizando.",
             "action_type": "windows_tool",
             "action_target": "taskmgr",
             "action_label": "Ver en Administrador de Tareas"
         })
 
-    # 6. REGLAS DE ORO: QUÉ NUNCA BORRAR Y QUÉ SÍ BORRAR
-    golden_rules = {
-        "safe_to_delete": [
-            "Archivos de la carpeta %TEMP% y C:\\Windows\\Temp (el sistema recrea lo necesario).",
-            "Instaladores (.exe, .msi) guardados en Descargas de programas que ya instalaste.",
-            "Caché web de navegadores (Chrome, Edge, Firefox) y de herramientas (pip, npm).",
-            "Archivos de la Papelera de Reciclaje.",
-            "Reportes de fallos (Crash Dumps) y logs de error antiguos."
-        ],
-        "safe_to_organize": [
-            "Mover fotos, videos, documentos e instaladores a subcarpetas clasificadas.",
-            "Desactivar programas del inicio de Windows (no se borran, solo arrancan cuando tú los abres)."
-        ],
-        "never_delete": [
-            "Cualquier archivo dentro de C:\\Windows o C:\\Windows\\System32.",
-            "Carpetas de 'Program Files' o 'Archivos de Programa' a mano (usa siempre el desinstalador).",
-            "Archivos ocultos con nombres que comiencen con '$' o archivos .sys de sistema.",
-            "Carpetas de AppData sin saber a qué aplicación corresponden."
-        ]
-    }
+    # 5.5. CONSEJO DE MODO ADMINISTRADOR (Si se ejecuta en modo estándar)
+    is_admin_active = bool(system.get("is_admin", False))
+    if not is_admin_active:
+        recommendations.append({
+            "id": "admin_mode_info",
+            "priority": "media",
+            "badge": "Permisos",
+            "color": "amber",
+            "title": "Activa el Modo Administrador para limpieza profunda del sistema",
+            "description": "Estás en Modo Estándar. Para limpiar al 100% carpetas protegidas (C:\\Windows\\Temp, caché de Windows Update y archivos de sistema), ejecuta NosClean como Administrador con 1 clic o sigue los pasos guiados.",
+            "action_type": "admin_modal",
+            "action_target": "admin",
+            "action_label": "Ejecutar como Administrador"
+        })
 
     # Ajuste de puntuación entre 30 y 100
     score = max(30, min(100, score))
@@ -181,8 +175,8 @@ def generate_pc_advice() -> Dict[str, Any]:
         health_status = "Bueno con Oportunidades de Mejora"
 
     return {
+        "is_admin": is_admin_active,
         "health_score": score,
         "health_status": health_status,
-        "recommendations": recommendations,
-        "golden_rules": golden_rules
+        "recommendations": recommendations
     }

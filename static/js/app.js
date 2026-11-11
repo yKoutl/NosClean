@@ -3,9 +3,13 @@ let currentTab = 'advisor';
 let systemOverviewData = null;
 let junkData = null;
 let installedAppsData = [];
+let currentRenderedApps = [];
 let commonPaths = {};
 let pendingModalAction = null;
 let sidebarCollapsed = false;
+let isAdminMode = false;
+let adminStatusChecked = false;
+let heavyScannedOnce = false;
 
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', () => {
@@ -135,6 +139,8 @@ function switchTab(tabId) {
         loadAdvisor();
     } else if (tabId === 'cleaner' && !junkData) {
         scanJunk();
+    } else if (tabId === 'heavy' && !heavyScannedOnce) {
+        scanHeavyFiles();
     } else if (tabId === 'apps' && installedAppsData.length === 0) {
         loadInstalledApps();
     } else if (tabId === 'organizer') {
@@ -190,7 +196,7 @@ function refreshCurrentTab() {
 
     if (currentTab === 'advisor') loadAdvisor();
     else if (currentTab === 'overview') loadOverview();
-    else if (currentTab === 'cleaner') scanJunk();
+    else if (currentTab === 'cleaner') scanJunk(true);
     else if (currentTab === 'heavy') scanHeavyFiles();
     else if (currentTab === 'apps') loadInstalledApps();
     else if (currentTab === 'organizer') scanOrganizer();
@@ -230,7 +236,7 @@ async function loadCommonPaths() {
     if (data) {
         commonPaths = data;
         const heavyInput = document.getElementById('heavy-path-input');
-        if (heavyInput) heavyInput.value = data.user_profile || '';
+        if (heavyInput) heavyInput.value = data.downloads || data.user_profile || '';
     }
 }
 
@@ -255,6 +261,10 @@ async function loadAdvisor() {
     if (!data) {
         grid.innerHTML = `<div class="col-span-2 text-center py-8 text-rose-400">Error al recopilar el diagnóstico. Revisa que el servidor esté activo.</div>`;
         return;
+    }
+
+    if (data.is_admin !== undefined) {
+        updateAdminBadgeUI(Boolean(data.is_admin));
     }
 
     if (scoreEl) scoreEl.textContent = data.health_score;
@@ -287,9 +297,12 @@ async function loadAdvisor() {
             emerald: 'bg-[#087A45] hover:bg-[#066237] text-white shadow-sm'
         };
 
-        const actionCall = rec.action_type === 'windows_tool'
-            ? `openWindowsTool('${rec.action_target}')`
-            : `switchTab('${rec.action_target}')`;
+        let actionCall = `switchTab('${rec.action_target}')`;
+        if (rec.action_type === 'windows_tool') {
+            actionCall = `openWindowsTool('${rec.action_target}')`;
+        } else if (rec.action_type === 'admin_modal') {
+            actionCall = `openAdminModal()`;
+        }
 
         card.className = "glass-card rounded-2xl p-5 flex flex-col justify-between border border-slate-200 bg-white shadow-sm";
         card.innerHTML = `
@@ -321,6 +334,7 @@ async function loadOverview() {
     const data = await apiGet('/api/system/overview');
     if (!data) return;
     systemOverviewData = data;
+    updateAdminBadgeUI(Boolean(data.is_admin || (data.os && data.os.is_admin)));
 
     // Header pills
     document.getElementById('pill-user').textContent = `${data.os.user} (${data.os.hostname})`;
@@ -429,11 +443,7 @@ async function updateQuickMetrics() {
 }
 
 // ======================== TAB 2: JUNK CLEANER ========================
-async function scanJunkAuto() {
-    await scanJunk();
-}
-
-async function scanJunk() {
+async function scanJunk(force = false) {
     const btn = document.getElementById('btn-scan-junk');
     const statusLabel = document.getElementById('junk-status-label');
     if (btn) btn.disabled = true;
@@ -443,7 +453,7 @@ async function scanJunk() {
         lucide.createIcons();
     }
 
-    const data = await apiGet('/api/junk/scan');
+    const data = await apiGet(`/api/junk/scan${force ? '?force=true' : ''}`);
     if (btn) btn.disabled = false;
     if (!data) return;
     junkData = data;
@@ -473,7 +483,7 @@ function renderJunkCategories(categories) {
         const opacity = hasItems ? 'opacity-100' : 'opacity-40';
 
         const adminBadge = cat.requires_admin 
-            ? '<span class="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">Requiere Admin</span>' 
+            ? '<button type="button" onclick="openAdminModal()" title="Haz clic para ejecutar como Administrador" class="ml-1.5 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300 transition-colors cursor-pointer">Requiere Admin · Activar</button>' 
             : '';
 
         item.innerHTML = `
@@ -529,7 +539,7 @@ async function executeJunkClean(selectedCategories) {
         } else {
             showToast(`¡Limpieza completada! Se liberaron ${res.freed_formatted} (${res.total_files_deleted} archivos eliminados)`, 'success');
         }
-        await scanJunk();
+        await scanJunk(true);
         await loadOverview();
         if (currentTab === 'advisor') loadAdvisor();
     }
@@ -568,6 +578,7 @@ async function scanHeavyFiles() {
         showToast('Debes ingresar o seleccionar una ruta para escanear', 'warning');
         return;
     }
+    heavyScannedOnce = true;
 
     btn.disabled = true;
     btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Buscando...</span>';
@@ -673,21 +684,27 @@ async function loadInstalledApps() {
 }
 
 function renderAppsTable(apps) {
+    currentRenderedApps = apps || [];
     const tbody = document.getElementById('apps-tbody');
     const badge = document.getElementById('apps-count-badge');
-    badge.textContent = `${apps.length} programas`;
+    badge.textContent = `${currentRenderedApps.length} programas`;
 
-    if (apps.length === 0) {
+    if (currentRenderedApps.length === 0) {
         tbody.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-slate-400">No se encontraron programas con ese criterio.</td></tr>`;
         return;
     }
 
     tbody.innerHTML = '';
-    apps.forEach(app => {
+    currentRenderedApps.forEach((app, idx) => {
         const row = document.createElement('tr');
         row.className = "hover:bg-slate-50 transition-colors border-b border-slate-100";
         
         const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(app.name)}`;
+        const folderBtn = app.install_location
+            ? `<button onclick="openAppLocation(${idx})" title="Abrir carpeta de instalación" class="p-1.5 rounded-xl bg-white hover:bg-slate-50 text-[#087A45] border border-slate-200 shadow-sm transition-colors cursor-pointer">
+                   <i data-lucide="folder" class="w-3.5 h-3.5"></i>
+               </button>`
+            : '';
 
         row.innerHTML = `
             <td class="px-4 py-3">
@@ -702,10 +719,11 @@ function renderAppsTable(apps) {
             <td class="px-4 py-3 text-xs text-[#64748B]">${app.install_date}</td>
             <td class="px-4 py-3 text-right">
                 <div class="flex items-center justify-end space-x-2">
+                    ${folderBtn}
                     <a href="${googleSearchUrl}" target="_blank" title="Buscar información en Google" class="p-1.5 rounded-xl bg-white hover:bg-slate-50 text-[#102D25] border border-slate-200 shadow-sm transition-colors cursor-pointer">
                         <i data-lucide="globe" class="w-3.5 h-3.5"></i>
                     </a>
-                    <button onclick="openWindowsTool('appsfeatures')" title="Abrir en Desinstalador de Windows" class="p-1.5 rounded-lg bg-slate-800 hover:bg-blue-600/30 text-blue-400 transition-colors">
+                    <button onclick="askUninstallApp(${idx})" title="Desinstalar programa" class="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-600/30 text-rose-400 transition-colors cursor-pointer">
                         <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                     </button>
                 </div>
@@ -715,6 +733,32 @@ function renderAppsTable(apps) {
     });
 
     lucide.createIcons();
+}
+
+function openAppLocation(idx) {
+    const app = currentRenderedApps[idx];
+    if (app && app.install_location) {
+        openFolderInExplorer(app.install_location);
+    }
+}
+
+function askUninstallApp(idx) {
+    const app = currentRenderedApps[idx];
+    if (!app) return;
+
+    openConfirmModal(
+        'Desinstalar Programa',
+        `¿Deseas iniciar el desinstalador oficial de "${app.name}"? Se abrirá el asistente del programa para que completes o canceles la desinstalación.`,
+        async () => {
+            const res = await apiPost('/api/software/uninstall', {
+                uninstall_command: app.uninstall_command || '',
+                name: app.name
+            });
+            if (res && res.success) {
+                showToast(res.message || `Desinstalador de ${app.name} iniciado`, 'info');
+            }
+        }
+    );
 }
 
 function filterApps() {
@@ -865,7 +909,17 @@ async function organizeFiles(simulate) {
     if (simulate) {
         const res = await apiPost('/api/organizer/organize', { path: targetPath, simulate: true });
         if (res) {
-            showToast(`Vista previa: Se clasificarán ${res.total_moved} archivos en sus respectivas subcarpetas`, 'info');
+            if (res.total_moved === 0) {
+                showToast('No hay archivos sueltos para organizar en esta carpeta', 'info');
+                return;
+            }
+            const badges = document.querySelectorAll('#organizer-tbody td:nth-child(2) span span');
+            badges.forEach(span => {
+                if (!span.textContent.startsWith('Mover a → ')) {
+                    span.textContent = `Mover a → ${span.textContent}/`;
+                }
+            });
+            showToast(`Simulación completada: ${res.total_moved} archivos listos para moverse a sus subcarpetas`, 'info');
         }
     } else {
         openConfirmModal(
@@ -936,25 +990,53 @@ async function loadProcesses() {
     data.by_memory.forEach(p => {
         const card = document.createElement('div');
         card.className = "flex items-center justify-between p-3 rounded-xl bg-white border border-slate-200 shadow-sm";
+        const safeName = (p.name || '').replace(/'/g, "\\'");
+        const killBtn = p.can_terminate
+            ? `<button onclick="askKillProcess(${p.pid}, '${safeName}')" title="Finalizar proceso (PID ${p.pid})" class="ml-2.5 p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors cursor-pointer">
+                   <i data-lucide="x-circle" class="w-4 h-4"></i>
+               </button>`
+            : `<span title="Proceso protegido del sistema" class="ml-2.5 p-1.5 rounded-lg bg-slate-100 text-slate-400 border border-slate-200">
+                   <i data-lucide="shield" class="w-4 h-4"></i>
+               </span>`;
         card.innerHTML = `
-            <div class="flex items-center space-x-2.5">
-                <div class="p-2 rounded-lg bg-[#16B84E]/10 text-[#087A45]">
+            <div class="flex items-center space-x-2.5 min-w-0">
+                <div class="p-2 rounded-lg bg-[#16B84E]/10 text-[#087A45] flex-shrink-0">
                     <i data-lucide="activity" class="w-4 h-4"></i>
                 </div>
-                <div>
-                    <h5 class="text-sm font-semibold text-[#102D25] max-w-[180px] truncate" title="${p.name}">${p.name}</h5>
+                <div class="min-w-0">
+                    <h5 class="text-sm font-semibold text-[#102D25] max-w-[165px] truncate" title="${p.name}">${p.name}</h5>
                     <span class="text-[11px] text-[#64748B]">PID: ${p.pid} • CPU: ${p.cpu_percent}%</span>
                 </div>
             </div>
-            <div class="text-right">
-                <span class="text-sm font-bold text-[#087A45]">${p.memory_formatted}</span>
-                <p class="text-[11px] text-[#64748B]">${p.memory_percent}% RAM</p>
+            <div class="flex items-center flex-shrink-0">
+                <div class="text-right">
+                    <span class="text-sm font-bold text-[#087A45]">${p.memory_formatted}</span>
+                    <p class="text-[11px] text-[#64748B]">${p.memory_percent}% RAM</p>
+                </div>
+                ${killBtn}
             </div>
         `;
         container.appendChild(card);
     });
 
     lucide.createIcons();
+}
+
+function askKillProcess(pid, procName) {
+    openConfirmModal(
+        'Finalizar Proceso en Memoria',
+        `¿Estás seguro de que deseas cerrar "${procName}" (PID: ${pid})? Si tienes documentos sin guardar en esa aplicación, podrías perder los cambios recientes.`,
+        async () => {
+            const res = await apiPost('/api/system/kill-process', { pid: pid });
+            if (res && res.success) {
+                showToast(res.message || `Proceso ${procName} finalizado`, 'success');
+                setTimeout(() => {
+                    loadProcesses();
+                    updateQuickMetrics();
+                }, 400);
+            }
+        }
+    );
 }
 
 // ======================== WINDOWS TOOLS & COMMON ACTIONS ========================
@@ -996,13 +1078,53 @@ function closeConfirmModal(confirmed) {
     pendingModalAction = null;
 }
 
-// ======================== MODAL DE BIENVENIDA (ONBOARDING) ========================
+// ======================== MODAL DE BIENVENIDA Y PERMISOS ADMIN ========================
+function updateAdminBadgeUI(isAdmin) {
+    isAdminMode = Boolean(isAdmin);
+    adminStatusChecked = true;
+
+    const btn = document.getElementById('btn-admin-status');
+    const icon = document.getElementById('admin-status-icon');
+    const label = document.getElementById('admin-status-label');
+    const stdBody = document.getElementById('admin-modal-standard-body');
+    const actBody = document.getElementById('admin-modal-active-body');
+
+    if (btn && label && icon) {
+        if (isAdminMode) {
+            btn.className = "flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-[#087A45] font-bold text-xs flex-shrink-0 shadow-sm transition-all cursor-pointer";
+            btn.title = "NosClean se está ejecutando con permisos completos de Administrador";
+            icon.setAttribute('data-lucide', 'shield-check');
+            icon.className = "w-3.5 h-3.5 text-[#087A45] flex-shrink-0";
+            label.textContent = "Modo Admin Activo";
+        } else {
+            btn.className = "flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 font-bold text-xs flex-shrink-0 shadow-sm transition-all cursor-pointer";
+            btn.title = "Haz clic para ejecutar como Administrador o ver los pasos";
+            icon.setAttribute('data-lucide', 'shield-alert');
+            icon.className = "w-3.5 h-3.5 text-amber-600 flex-shrink-0";
+            label.textContent = "Ejecutar como Admin";
+        }
+    }
+
+    if (stdBody && actBody) {
+        if (isAdminMode) {
+            stdBody.classList.add('hidden');
+            actBody.classList.remove('hidden');
+        } else {
+            stdBody.classList.remove('hidden');
+            actBody.classList.add('hidden');
+        }
+    }
+    lucide.createIcons();
+}
+
 function checkWelcomeModal() {
     const dismissed = localStorage.getItem('nosclean_welcome_dismissed');
     if (!dismissed) {
         setTimeout(() => {
             showWelcomeModal();
         }, 300);
+    } else {
+        checkAdminStartupPrompt();
     }
 }
 
@@ -1023,6 +1145,108 @@ function closeWelcomeModal() {
     if (modal) {
         modal.classList.add('hidden');
     }
+    checkAdminStartupPrompt();
+}
+
+function checkAdminStartupPrompt() {
+    const adminDismissed = localStorage.getItem('nosclean_admin_prompt_dismissed');
+    if (adminDismissed === 'true') return;
+
+    const tryShow = () => {
+        if (!isAdminMode) {
+            openAdminModal();
+        }
+    };
+
+    if (adminStatusChecked) {
+        setTimeout(tryShow, 250);
+    } else {
+        setTimeout(tryShow, 700);
+    }
+}
+
+function openAdminModal() {
+    const modal = document.getElementById('admin-modal');
+    if (modal) {
+        updateAdminBadgeUI(isAdminMode);
+        modal.classList.remove('hidden');
+        lucide.createIcons();
+    }
+}
+
+function closeAdminModal() {
+    const modal = document.getElementById('admin-modal');
+    const dontShow = document.getElementById('admin-dont-show');
+    if (dontShow && dontShow.checked) {
+        localStorage.setItem('nosclean_admin_prompt_dismissed', 'true');
+    }
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+async function restartAsAdmin() {
+    const btn = document.getElementById('btn-restart-admin-now');
+    const label = document.getElementById('btn-restart-admin-label');
+    if (btn) btn.disabled = true;
+    if (label) label.textContent = 'Solicitando permiso a Windows...';
+
+    try {
+        const res = await fetch('/api/actions/restart-admin', { method: 'POST' });
+        const json = await res.json();
+
+        if (json && json.success) {
+            if (json.data && json.data.already_admin) {
+                updateAdminBadgeUI(true);
+                closeAdminModal();
+                showToast('NosClean ya está ejecutándose como Administrador.', 'success');
+                return;
+            }
+            document.body.innerHTML = `
+                <div class="h-screen w-screen bg-[#F4F7F5] flex flex-col items-center justify-center text-[#102D25] p-6 text-center">
+                    <div class="h-16 w-16 rounded-2xl bg-[#16B84E]/15 border border-[#16B84E]/30 flex items-center justify-center text-[#087A45] mb-4 shadow-sm">
+                        <i data-lucide="shield-check" class="w-8 h-8"></i>
+                    </div>
+                    <h1 class="text-2xl font-black text-[#102D25] mb-2">Abriendo en Modo Administrador...</h1>
+                    <p class="text-[#64748B] text-sm max-w-md mb-4">Se ha iniciado la nueva ventana de <strong class="text-[#087A45]">NosClean (Administrador)</strong> con todos los permisos del sistema activados.</p>
+                    <p class="text-slate-400 text-xs">Esta ventana anterior se cerrará automáticamente.</p>
+                </div>
+            `;
+            lucide.createIcons();
+        } else {
+            showToast(json?.message || 'No se aceptó el permiso de Administrador. Puedes usar los pasos manuales o continuar en modo estándar.', 'warning');
+        }
+    } catch (err) {
+        showToast(`Error al solicitar modo Administrador: ${err.message}`, 'error');
+    } finally {
+        if (btn) btn.disabled = false;
+        if (label) label.textContent = 'Ejecutar como Administrador Ahora';
+    }
+}
+
+async function shutdownFromAdminModal() {
+    closeAdminModal();
+    try {
+        await fetch('/api/system/shutdown', { method: 'POST' });
+    } catch {}
+    document.body.innerHTML = `
+        <div class="h-screen w-screen bg-[#F4F7F5] flex flex-col items-center justify-center text-[#102D25] p-6 text-center">
+            <div class="h-16 w-16 rounded-2xl bg-[#16B84E]/10 border border-[#16B84E]/30 flex items-center justify-center text-[#087A45] mb-4 shadow-sm">
+                <i data-lucide="power" class="w-8 h-8"></i>
+            </div>
+            <h1 class="text-2xl font-black text-[#102D25] mb-2">NosClean Cerrado (0 MB en uso)</h1>
+            <p class="text-[#64748B] text-sm max-w-md mb-5">Ahora puedes abrirlo manualmente como Administrador siguiendo estos pasos:</p>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm text-left max-w-md w-full mb-5">
+                <ol class="text-xs text-[#1E3A34] space-y-2 list-decimal list-inside leading-relaxed font-medium">
+                    <li>Busca el icono de <strong class="text-[#102D25]">NosClean</strong> en tu Escritorio o carpeta.</li>
+                    <li>Haz <strong class="text-[#102D25]">clic derecho</strong> sobre el icono.</li>
+                    <li>Elige <strong class="text-[#087A45]">"Ejecutar como administrador"</strong> y pulsa <strong class="text-[#102D25]">"Sí"</strong>.</li>
+                </ol>
+            </div>
+            <p class="text-slate-400 text-xs">Ya puedes cerrar esta ventana de forma segura.</p>
+        </div>
+    `;
+    lucide.createIcons();
 }
 
 // ======================== MODAL DE QR (AMPLIADO) ========================
@@ -1086,6 +1310,10 @@ function closeTaskbarModal() {
 // Escuchar tecla ESC para cerrar cualquier modal abierto
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
+        const adminModal = document.getElementById('admin-modal');
+        if (adminModal && !adminModal.classList.contains('hidden')) {
+            closeAdminModal();
+        }
         const taskbarModal = document.getElementById('pin-taskbar-modal');
         if (taskbarModal && !taskbarModal.classList.contains('hidden')) {
             closeTaskbarModal();

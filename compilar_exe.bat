@@ -1,6 +1,6 @@
 @echo off
 echo ========================================================
-echo        Compilando NosClean v5.0.3 a Ejecutable (.exe)
+echo        Compilando NosClean v5.0.7 a Ejecutable (.exe)
 echo ========================================================
 echo.
 
