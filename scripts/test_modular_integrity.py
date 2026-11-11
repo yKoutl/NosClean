@@ -126,6 +126,8 @@ def run_tests():
     assert_test("openAdminModal" in js_code and "restartAsAdmin" in js_code, "Funciones de Modo Administrador implementadas en app.js")
     assert_test("askUninstallApp" in js_code and "askKillProcess" in js_code, "Funciones de desinstalación directa y cierre de procesos conectadas en app.js")
     assert_test("scanJunkAuto" not in js_code and "scanJunkAuto" not in html_code, "Código muerto scanJunkAuto eliminado de HTML y JS")
+    assert_test("rocket-loader-modal" in html_code and "rocket-svg-actor" in html_code, "Modal de carga con Cohete SVG corporativo presente en index.html")
+    assert_test("startRocketLoader" in js_code and "finishRocketLoader" in js_code, "Controlador de progreso con porcentaje del Cohete implementado en app.js")
 
     # -------------------------------------------------------------
     # NIVEL 4: Funciones Puras y Lógica de Negocio

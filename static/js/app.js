@@ -140,7 +140,7 @@ function switchTab(tabId) {
     } else if (tabId === 'cleaner' && !junkData) {
         scanJunk();
     } else if (tabId === 'heavy' && !heavyScannedOnce) {
-        scanHeavyFiles();
+        scanHeavyFiles(false);
     } else if (tabId === 'apps' && installedAppsData.length === 0) {
         loadInstalledApps();
     } else if (tabId === 'organizer') {
@@ -443,7 +443,7 @@ async function updateQuickMetrics() {
 }
 
 // ======================== TAB 2: JUNK CLEANER ========================
-async function scanJunk(force = false) {
+async function scanJunk(force = false, silent = false) {
     const btn = document.getElementById('btn-scan-junk');
     const statusLabel = document.getElementById('junk-status-label');
     if (btn) btn.disabled = true;
@@ -453,9 +453,25 @@ async function scanJunk(force = false) {
         lucide.createIcons();
     }
 
+    if (force && !silent) {
+        startRocketLoader({
+            badge: 'ESCÁNER PROFUNDO NOSCLEAN',
+            title: 'Analizando Basura y Temporales',
+            steps: [
+                { at: 0, text: 'Inspeccionando carpetas temporales de usuario (%TEMP%)...' },
+                { at: 35, text: 'Revisando cachés de navegadores (Chrome, Edge, Brave)...' },
+                { at: 68, text: 'Analizando registros de fallos, Prefetch y Windows Temp...' },
+                { at: 85, text: 'Calculando espacio total recuperable...' }
+            ]
+        });
+    }
+
     const data = await apiGet(`/api/junk/scan${force ? '?force=true' : ''}`);
     if (btn) btn.disabled = false;
-    if (!data) return;
+    if (!data) {
+        if (force && !silent) hideRocketLoader();
+        return;
+    }
     junkData = data;
 
     document.getElementById('junk-total-size').textContent = data.total_formatted;
@@ -468,6 +484,15 @@ async function scanJunk(force = false) {
 
     renderJunkCategories(data.categories);
     lucide.createIcons();
+
+    if (force && !silent) {
+        await finishRocketLoader({
+            stepText: '¡Análisis de sistema completado!',
+            resultTitle: 'Escaneo Finalizado al 100%',
+            resultDetail: `Se detectaron ${data.total_files.toLocaleString()} archivos temporales (${data.total_formatted} recuperables).`,
+            holdMs: 750
+        });
+    }
 }
 
 function renderJunkCategories(categories) {
@@ -528,20 +553,39 @@ function confirmCleanSelected() {
 async function executeJunkClean(selectedCategories) {
     const btn = document.getElementById('btn-clean-junk');
     if (btn) btn.disabled = true;
-    showToast('Iniciando limpieza...', 'info');
+
+    startRocketLoader({
+        badge: 'MOTOR DE LIMPIEZA NOSCLEAN',
+        title: 'Eliminando Archivos Basura',
+        steps: [
+            { at: 0, text: 'Verificando archivos abiertos y protecciones del sistema...' },
+            { at: 30, text: 'Purgando cachés de navegadores y sesiones antiguas...' },
+            { at: 62, text: 'Eliminando archivos temporales y volcados de memoria...' },
+            { at: 86, text: 'Liberando bloques de almacenamiento en disco...' }
+        ]
+    });
 
     const res = await apiPost('/api/junk/clean', { categories: selectedCategories });
     if (btn) btn.disabled = false;
 
     if (res && res.success) {
-        if (res.total_skipped > 0) {
-            showToast(`¡Limpieza completada! Se liberaron ${res.freed_formatted} (${res.total_files_deleted} eliminados). ${res.total_skipped} archivos están en uso por programas abiertos y fueron protegidos de forma segura.`, 'success');
-        } else {
-            showToast(`¡Limpieza completada! Se liberaron ${res.freed_formatted} (${res.total_files_deleted} archivos eliminados)`, 'success');
-        }
-        await scanJunk(true);
+        const detailMsg = res.total_skipped > 0
+            ? `Se liberaron ${res.freed_formatted} (${res.total_files_deleted.toLocaleString()} archivos eliminados). ${res.total_skipped.toLocaleString()} archivos en uso fueron protegidos.`
+            : `Se liberaron ${res.freed_formatted} (${res.total_files_deleted.toLocaleString()} archivos basura eliminados).`;
+
+        await scanJunk(true, true);
         await loadOverview();
         if (currentTab === 'advisor') loadAdvisor();
+
+        await finishRocketLoader({
+            stepText: '¡Limpieza profunda finalizada con éxito!',
+            resultTitle: `¡Espacio Liberado: ${res.freed_formatted}!`,
+            resultDetail: detailMsg,
+            holdMs: 1600
+        });
+        showToast(detailMsg, 'success');
+    } else {
+        hideRocketLoader();
     }
 }
 
@@ -567,7 +611,7 @@ function scanDriveInHeavy(drivePath) {
     scanHeavyFiles();
 }
 
-async function scanHeavyFiles() {
+async function scanHeavyFiles(showLoader = true) {
     const pathInput = document.getElementById('heavy-path-input');
     const minSizeSelect = document.getElementById('heavy-min-size');
     const btn = document.getElementById('btn-scan-heavy');
@@ -584,6 +628,19 @@ async function scanHeavyFiles() {
     btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Buscando...</span>';
     lucide.createIcons();
 
+    const minSize = parseInt(minSizeSelect.value) || 100;
+    if (showLoader) {
+        startRocketLoader({
+            badge: 'RADAR DE ALMACENAMIENTO NOSCLEAN',
+            title: 'Buscando Archivos Pesados',
+            steps: [
+                { at: 0, text: `Explorando ruta: ${targetPath}...` },
+                { at: 40, text: `Filtrando archivos mayores a ${minSize} MB...` },
+                { at: 78, text: 'Ordenando resultados de mayor a menor tamaño...' }
+            ]
+        });
+    }
+
     tbody.innerHTML = `
         <tr>
             <td colspan="5" class="text-center py-12 text-slate-400">
@@ -596,7 +653,6 @@ async function scanHeavyFiles() {
     `;
     lucide.createIcons();
 
-    const minSize = parseInt(minSizeSelect.value) || 100;
     const url = `/api/storage/heavy-files?path=${encodeURIComponent(targetPath)}&min_size_mb=${minSize}&max_results=150`;
     const data = await apiGet(url);
 
@@ -605,8 +661,18 @@ async function scanHeavyFiles() {
     lucide.createIcons();
 
     if (!data || data.error) {
+        if (showLoader) hideRocketLoader();
         tbody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-rose-400">${data?.error || 'Error al buscar archivos'}</td></tr>`;
         return;
+    }
+
+    if (showLoader) {
+        await finishRocketLoader({
+            stepText: '¡Búsqueda de archivos gigantes completada!',
+            resultTitle: `${data.found_count} Archivos Detectados`,
+            resultDetail: `Espacio total acumulado en estos archivos: ${data.total_size_formatted}.`,
+            holdMs: 750
+        });
     }
 
     document.getElementById('heavy-results-badge').textContent = `${data.found_count} archivos`;
@@ -656,7 +722,7 @@ function confirmRecycleFile(filePath, fileName) {
             const res = await apiPost('/api/actions/recycle', { path: filePath });
             if (res && res.success) {
                 showToast(`"${fileName}" enviado a la papelera`, 'success');
-                scanHeavyFiles();
+                scanHeavyFiles(false);
             }
         }
     );
@@ -926,10 +992,27 @@ async function organizeFiles(simulate) {
             'Confirmar Organización Automática',
             `Los archivos sueltos se moverán a carpetas clasificadas (ej: Descargas/Instaladores, Descargas/Documentos, etc.). Tus archivos quedarán totalmente ordenados.`,
             async () => {
+                startRocketLoader({
+                    badge: 'ORGANIZADOR INTELIGENTE NOSCLEAN',
+                    title: 'Clasificando y Ordenando Archivos',
+                    steps: [
+                        { at: 0, text: 'Analizando extensiones y tipos de archivo...' },
+                        { at: 40, text: 'Creando subcarpetas por categoría (Documentos, Instaladores, etc.)...' },
+                        { at: 75, text: 'Moviendo archivos de forma segura sin sobrescribir...' }
+                    ]
+                });
                 const res = await apiPost('/api/organizer/organize', { path: targetPath, simulate: false });
                 if (res && res.success) {
-                    showToast(`¡Excelente! Se organizaron ${res.total_moved} archivos correctamente`, 'success');
                     await scanOrganizer();
+                    await finishRocketLoader({
+                        stepText: '¡Carpeta ordenada al 100%!',
+                        resultTitle: '¡Organización Completada!',
+                        resultDetail: `Se clasificaron y movieron ${res.total_moved} archivos a sus carpetas correspondientes.`,
+                        holdMs: 1300
+                    });
+                    showToast(`¡Excelente! Se organizaron ${res.total_moved} archivos correctamente`, 'success');
+                } else {
+                    hideRocketLoader();
                 }
             }
         );
@@ -1366,6 +1449,126 @@ function showToast(message, type = 'info') {
     }, 4000);
 }
 
+// ======================== PANTALLA DE CARGA COHETE CON PORCENTAJE ========================
+let rocketInterval = null;
+let rocketCurrentPercent = 0;
+let rocketStartedAt = 0;
+
+function updateRocketUI(percent, stepText) {
+    const pctEl = document.getElementById('rocket-percent-text');
+    const barEl = document.getElementById('rocket-progress-bar');
+    const stepEl = document.getElementById('rocket-step-text');
+    const rounded = Math.max(0, Math.min(100, Math.round(percent)));
+    if (pctEl) pctEl.textContent = `${rounded}%`;
+    if (barEl) barEl.style.width = `${rounded}%`;
+    if (stepText && stepEl) stepEl.textContent = stepText;
+}
+
+function startRocketLoader({ badge = 'MOTOR DE ACELERACIÓN NOSCLEAN', title = 'Optimizando tu PC', steps = [] } = {}) {
+    if (rocketInterval) {
+        clearInterval(rocketInterval);
+        rocketInterval = null;
+    }
+
+    const modal = document.getElementById('rocket-loader-modal');
+    const badgeEl = document.getElementById('rocket-sub-badge');
+    const titleEl = document.getElementById('rocket-title');
+    const resultBox = document.getElementById('rocket-result-box');
+    const rocketSvg = document.getElementById('rocket-svg-actor');
+
+    rocketCurrentPercent = 0;
+    rocketStartedAt = performance.now();
+
+    if (badgeEl) badgeEl.textContent = badge;
+    if (titleEl) titleEl.textContent = title;
+    if (resultBox) resultBox.classList.add('hidden');
+    if (rocketSvg) {
+        rocketSvg.classList.remove('rocket-launching');
+        rocketSvg.classList.add('rocket-floating');
+    }
+
+    const initialStep = steps.length > 0 ? steps[0].text : 'Iniciando operación...';
+    updateRocketUI(0, initialStep);
+
+    if (modal) {
+        modal.classList.remove('hidden');
+        lucide.createIcons();
+    }
+
+    rocketInterval = setInterval(() => {
+        if (rocketCurrentPercent < 45) {
+            rocketCurrentPercent += 4.2;
+        } else if (rocketCurrentPercent < 75) {
+            rocketCurrentPercent += 2.4;
+        } else if (rocketCurrentPercent < 92) {
+            rocketCurrentPercent += 0.85;
+        }
+
+        let currentStepMsg = null;
+        for (let i = steps.length - 1; i >= 0; i--) {
+            if (rocketCurrentPercent >= steps[i].at) {
+                currentStepMsg = steps[i].text;
+                break;
+            }
+        }
+        updateRocketUI(rocketCurrentPercent, currentStepMsg);
+    }, 75);
+}
+
+async function finishRocketLoader({ stepText = '¡Proceso completado al 100%!', resultTitle = '¡Operación Completada!', resultDetail = '', holdMs = 1350 } = {}) {
+    if (rocketInterval) {
+        clearInterval(rocketInterval);
+        rocketInterval = null;
+    }
+
+    // Garantizar que el usuario vea el vuelo del cohete al menos 750ms antes del 100%
+    const elapsed = performance.now() - rocketStartedAt;
+    const minFlightMs = 750;
+    if (elapsed < minFlightMs) {
+        const remaining = minFlightMs - elapsed;
+        const frames = Math.max(4, Math.floor(remaining / 45));
+        const delta = (95 - rocketCurrentPercent) / frames;
+        for (let i = 0; i < frames; i++) {
+            rocketCurrentPercent = Math.min(96, rocketCurrentPercent + delta);
+            updateRocketUI(rocketCurrentPercent);
+            await new Promise(r => setTimeout(r, 45));
+        }
+    }
+
+    updateRocketUI(100, stepText);
+
+    const rocketSvg = document.getElementById('rocket-svg-actor');
+    if (rocketSvg) {
+        rocketSvg.classList.remove('rocket-floating');
+        rocketSvg.classList.add('rocket-launching');
+    }
+
+    const resultBox = document.getElementById('rocket-result-box');
+    const resTitleEl = document.getElementById('rocket-result-title');
+    const resDetailEl = document.getElementById('rocket-result-detail');
+
+    if (resultBox && resultDetail) {
+        if (resTitleEl) resTitleEl.textContent = resultTitle;
+        if (resDetailEl) resDetailEl.textContent = resultDetail;
+        resultBox.classList.remove('hidden');
+        lucide.createIcons();
+    }
+
+    await new Promise(r => setTimeout(r, holdMs));
+    hideRocketLoader();
+}
+
+function hideRocketLoader() {
+    if (rocketInterval) {
+        clearInterval(rocketInterval);
+        rocketInterval = null;
+    }
+    const modal = document.getElementById('rocket-loader-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
 // ======================== OPTIMIZACIÓN RÁPIDA EN 1 CLIC ========================
 async function quickOptimizePC() {
     const btn = document.getElementById('btn-quick-optimize');
@@ -1379,7 +1582,16 @@ async function quickOptimizePC() {
     if (label) label.innerText = 'Optimizando...';
     if (icon) icon.classList.add('animate-pulse');
 
-    showToast('Iniciando optimización rápida (liberando RAM inactiva y cachés)...', 'info');
+    startRocketLoader({
+        badge: 'MOTOR DE ACELERACIÓN NOSCLEAN',
+        title: 'Impulsando y Optimizando tu PC',
+        steps: [
+            { at: 0, text: 'Analizando procesos activos en memoria RAM...' },
+            { at: 32, text: 'Liberando bloques de RAM inactiva (Working Set)...' },
+            { at: 64, text: 'Vaciando caché de resolución DNS de Windows...' },
+            { at: 84, text: 'Depurando archivos temporales rápidos...' }
+        ]
+    });
 
     try {
         const res = await fetch('/api/system/optimize', { method: 'POST' });
@@ -1388,18 +1600,30 @@ async function quickOptimizePC() {
         if (data.success) {
             const ramText = data.ram_freed_formatted || '0 B';
             const diskText = data.disk_freed_formatted || '0 B';
+            const summaryText = `RAM liberada: ${ramText} • Temporales eliminados: ${diskText}. Uso actual de RAM: ${data.new_ram_used_gb} GB (${data.new_ram_percent}%).`;
             
-            showToast(`Optimización completada. Se liberaron ${ramText} de RAM y ${diskText} de disco. Nueva RAM: ${data.new_ram_used_gb} GB (${data.new_ram_percent}%).`, 'success');
-            
-            // Refrescar métricas de inmediato
+            // Refrescar métricas en segundo plano mientras muestra el 100%
             await loadOverview();
             if (currentTab === 'cleaner') {
-                await scanJunk();
+                await scanJunk(true, true);
+            } else if (currentTab === 'advisor') {
+                loadAdvisor();
             }
+
+            await finishRocketLoader({
+                stepText: '¡Tu PC ha sido optimizada al 100%!',
+                resultTitle: '¡Aceleración Completada con Éxito!',
+                resultDetail: summaryText,
+                holdMs: 1650
+            });
+
+            showToast(`Optimización completada: ${ramText} de RAM y ${diskText} de disco liberados.`, 'success');
         } else {
+            hideRocketLoader();
             showToast('Ocurrió un error al optimizar el equipo.', 'error');
         }
     } catch (err) {
+        hideRocketLoader();
         showToast(`Error al optimizar: ${err.message}`, 'error');
     } finally {
         if (btn) {

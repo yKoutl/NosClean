@@ -507,3 +507,88 @@ input:focus {
     border: 1px solid var(--border-subtle) !important;
     box-shadow: 0 20px 40px rgba(16, 45, 37, 0.18) !important;
 }
+
+/* ================== PANTALLA DE CARGA COHETE CORPORATIVO ================== */
+@keyframes nosclean-rocket-float {
+    0%, 100% {
+        transform: translateY(0px) rotate(-4deg);
+    }
+    50% {
+        transform: translateY(-8px) rotate(-2deg);
+    }
+}
+
+@keyframes nosclean-rocket-launch {
+    0% {
+        transform: translateY(0px) scale(1);
+    }
+    30% {
+        transform: translateY(5px) scale(0.96);
+    }
+    100% {
+        transform: translateY(-28px) scale(1.08);
+    }
+}
+
+@keyframes nosclean-flame-pulse {
+    0%, 100% {
+        transform: scaleY(1) scaleX(1);
+        opacity: 0.95;
+    }
+    50% {
+        transform: scaleY(1.28) scaleX(0.88);
+        opacity: 1;
+    }
+}
+
+@keyframes nosclean-star-fall {
+    0% {
+        transform: translateY(-40px);
+        opacity: 0;
+    }
+    30% {
+        opacity: 0.75;
+    }
+    100% {
+        transform: translateY(70px);
+        opacity: 0;
+    }
+}
+
+@keyframes nosclean-ring-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.rocket-floating {
+    animation: nosclean-rocket-float 1.6s ease-in-out infinite;
+    transform-origin: center center;
+}
+
+.rocket-launching {
+    animation: nosclean-rocket-launch 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.rocket-flame {
+    animation: nosclean-flame-pulse 0.22s ease-in-out infinite;
+    transform-origin: 60px 88px;
+}
+
+.rocket-star-1 {
+    animation: nosclean-star-fall 1.1s linear infinite;
+}
+.rocket-star-2 {
+    animation: nosclean-star-fall 1.4s linear infinite 0.35s;
+}
+.rocket-star-3 {
+    animation: nosclean-star-fall 0.95s linear infinite 0.65s;
+}
+
+.rocket-orbit-ring {
+    animation: nosclean-ring-spin 9s linear infinite;
+    transform-origin: center center;
+}

@@ -44,7 +44,7 @@
     </script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="/static/css/style.css?v=12">
+    <link rel="stylesheet" href="/static/css/style.css?v=19">
 </head>
 
 <body class="h-screen w-screen overflow-hidden antialiased">
@@ -1418,7 +1418,7 @@
         </div>
     </div>
 
-    <script src="/static/js/app.js?v=17"></script>
+    <script src="/static/js/app.js?v=19"></script>
     <script>
         lucide.createIcons();
     </script>
@@ -1634,6 +1634,91 @@
                         <i data-lucide="check" class="w-4 h-4 text-white"></i>
                         <span class="text-white">¡Entendido!</span>
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL PANTALLA DE CARGA COHETE CORPORATIVO ==================== -->
+    <div id="rocket-loader-modal"
+        class="fixed inset-0 z-50 bg-[#102D25]/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="glass-panel bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 border border-emerald-200 shadow-2xl relative text-center overflow-hidden">
+            
+            <!-- Badge Superior Corporativo -->
+            <div class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-50 text-[#087A45] text-[11px] font-extrabold border border-emerald-200 mb-3">
+                <i data-lucide="zap" class="w-3.5 h-3.5 text-[#087A45]"></i>
+                <span id="rocket-sub-badge">MOTOR DE ACELERACIÓN NOSCLEAN</span>
+            </div>
+
+            <!-- Escenario Circular con Cohete SVG Volando -->
+            <div class="relative w-32 h-32 mx-auto my-2 flex items-center justify-center rounded-full bg-[#102D25] border-4 border-[#16B84E]/40 shadow-xl overflow-hidden">
+                <!-- Anillo orbital punteado giratorio -->
+                <svg class="absolute inset-1.5 w-[112px] h-[112px] rocket-orbit-ring opacity-35 pointer-events-none" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="46" fill="none" stroke="#16B84E" stroke-width="1.5" stroke-dasharray="6 8" />
+                </svg>
+
+                <!-- Líneas de velocidad espaciales -->
+                <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 120 120">
+                    <line x1="26" y1="15" x2="26" y2="34" stroke="#16B84E" stroke-width="2" stroke-linecap="round" class="rocket-star-1" />
+                    <line x1="94" y1="25" x2="94" y2="45" stroke="#087A45" stroke-width="2.5" stroke-linecap="round" class="rocket-star-2" />
+                    <line x1="38" y1="5" x2="38" y2="20" stroke="#A7F3D0" stroke-width="1.5" stroke-linecap="round" class="rocket-star-3" />
+                    <circle cx="85" cy="18" r="2" fill="#16B84E" class="rocket-star-3" />
+                    <circle cx="22" cy="40" r="1.5" fill="#A7F3D0" class="rocket-star-2" />
+                </svg>
+
+                <!-- Cohete Vectorial Corporativo NosClean (Cero Emojis) -->
+                <svg id="rocket-svg-actor" class="w-24 h-24 relative z-10 rocket-floating" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Estela de propulsión esmeralda -->
+                    <g class="rocket-flame">
+                        <path d="M60 86 C51 96, 54 108, 60 116 C66 108, 69 96, 60 86 Z" fill="#16B84E" />
+                        <path d="M60 86 C55 93, 56 102, 60 108 C64 102, 65 93, 60 86 Z" fill="#A7F3D0" />
+                    </g>
+                    <!-- Aletas laterales (#087A45) -->
+                    <path d="M44 63 L31 78 L45 78 Z" fill="#087A45" stroke="#16B84E" stroke-width="1.5" stroke-linejoin="round" />
+                    <path d="M76 63 L89 78 L75 78 Z" fill="#087A45" stroke="#16B84E" stroke-width="1.5" stroke-linejoin="round" />
+                    <!-- Base de propulsor -->
+                    <rect x="49" y="79" width="22" height="6" rx="2.5" fill="#087A45" stroke="#16B84E" stroke-width="1.2" />
+                    <!-- Cuerpo fuselaje del cohete (#FFFFFF con borde #16B84E) -->
+                    <path d="M60 18 C45 34, 43 56, 45 79 L75 79 C77 56, 75 34, 60 18 Z" fill="#FFFFFF" stroke="#16B84E" stroke-width="2" />
+                    <!-- Punta del cohete (#16B84E) -->
+                    <path d="M60 18 C53 26, 49 34, 48 40 L72 40 C71 34, 67 26, 60 18 Z" fill="#16B84E" />
+                    <!-- Ventana de cabina (#102D25 con aro #087A45) -->
+                    <circle cx="60" cy="54" r="9" fill="#102D25" stroke="#087A45" stroke-width="2.5" />
+                    <circle cx="57.5" cy="51.5" r="2.5" fill="#16B84E" />
+                    <!-- Aleta central -->
+                    <line x1="60" y1="68" x2="60" y2="81" stroke="#087A45" stroke-width="3" stroke-linecap="round" />
+                </svg>
+            </div>
+
+            <!-- Contador Gigante de Porcentaje -->
+            <div class="mt-2 flex items-baseline justify-center space-x-1">
+                <span id="rocket-percent-text" class="text-4xl sm:text-5xl font-black text-[#087A45] tracking-tight">0%</span>
+            </div>
+
+            <!-- Título y Paso Actual -->
+            <h3 id="rocket-title" class="text-lg sm:text-xl font-black text-[#102D25] mt-1">Optimizando tu PC</h3>
+            <p id="rocket-step-text" class="text-xs sm:text-sm font-semibold text-[#64748B] mt-1 min-h-[20px]">
+                Preparando módulos del sistema...
+            </p>
+
+            <!-- Barra de Progreso Esmeralda -->
+            <div class="w-full h-3.5 bg-[#F4F7F5] rounded-full overflow-hidden mt-4 border border-slate-200 p-0.5 shadow-inner">
+                <div id="rocket-progress-bar"
+                    class="h-full rounded-full transition-all duration-200 ease-out"
+                    style="width: 0%; background: linear-gradient(90deg, #087A45 0%, #16B84E 100%);">
+                </div>
+            </div>
+
+            <!-- Tarjeta de Resultado al llegar al 100% -->
+            <div id="rocket-result-box" class="hidden mt-4 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-left">
+                <div class="flex items-start space-x-2.5">
+                    <div class="p-1.5 rounded-xl bg-[#087A45] text-white flex-shrink-0 mt-0.5">
+                        <i data-lucide="check" class="w-4 h-4 text-white"></i>
+                    </div>
+                    <div>
+                        <p id="rocket-result-title" class="text-xs font-extrabold text-[#087A45]">¡Operación Completada al 100%!</p>
+                        <p id="rocket-result-detail" class="text-xs text-[#102D25] font-semibold mt-0.5 leading-relaxed"></p>
+                    </div>
                 </div>
             </div>
         </div>
