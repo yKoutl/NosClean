@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from typing import List
 
 from app.auditor import get_system_overview, get_top_processes, kill_process_by_pid
-from app.cleaner import scan_junk, clean_selected_categories, quick_optimize
+from app.cleaner import scan_junk, clean_selected_categories, quick_optimize, get_task_progress
 from app.storage import scan_heavy_files, COMMON_PATHS
 from app.software import get_installed_programs, get_startup_applications, launch_uninstaller
 from app.organizer import scan_target_folder, organize_files
@@ -58,7 +58,14 @@ def get_manifest():
 def read_root():
     index_file = os.path.join(STATIC_DIR, "index.html")
     if os.path.exists(index_file):
-        return FileResponse(index_file)
+        return FileResponse(
+            index_file,
+            headers={
+                "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+                "Pragma": "no-cache",
+                "Expires": "0"
+            }
+        )
     return {"message": "El dashboard frontend está cargando."}
 
 # ================== ASESOR Y CONSEJOS ==================
@@ -86,6 +93,10 @@ def api_system_kill_process(req: KillProcessRequest):
     return {"success": True, "message": msg}
 
 # ================== RUTAS DE LIMPIEZA ==================
+@app.get("/api/system/progress")
+def api_system_progress():
+    return get_task_progress()
+
 @app.post("/api/system/optimize")
 def api_system_optimize():
     return quick_optimize()

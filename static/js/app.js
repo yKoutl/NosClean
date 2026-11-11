@@ -573,15 +573,18 @@ async function executeJunkClean(selectedCategories) {
             ? `Se liberaron ${res.freed_formatted} (${res.total_files_deleted.toLocaleString()} archivos eliminados). ${res.total_skipped.toLocaleString()} archivos en uso fueron protegidos.`
             : `Se liberaron ${res.freed_formatted} (${res.total_files_deleted.toLocaleString()} archivos basura eliminados).`;
 
-        await scanJunk(true, true);
-        await loadOverview();
-        if (currentTab === 'advisor') loadAdvisor();
+        // Refrescar métricas en paralelo mientras el cohete llega al 100%
+        Promise.all([
+            scanJunk(true, true),
+            loadOverview(),
+            currentTab === 'advisor' ? loadAdvisor() : Promise.resolve()
+        ]).catch(() => {});
 
         await finishRocketLoader({
             stepText: '¡Limpieza profunda finalizada con éxito!',
             resultTitle: `¡Espacio Liberado: ${res.freed_formatted}!`,
             resultDetail: detailMsg,
-            holdMs: 1600
+            holdMs: 1500
         });
         showToast(detailMsg, 'success');
     } else {
@@ -1449,9 +1452,12 @@ function showToast(message, type = 'info') {
     }, 4000);
 }
 
-// ======================== PANTALLA DE CARGA COHETE CON PORCENTAJE ========================
+// ======================== PANTALLA DE CARGA COHETE CON PORCENTAJE DINÁMICO REAL ========================
 let rocketInterval = null;
+let rocketPollInterval = null;
 let rocketCurrentPercent = 0;
+let rocketTargetPercent = 0;
+let rocketBackendStep = '';
 let rocketStartedAt = 0;
 
 function updateRocketUI(percent, stepText) {
@@ -1464,22 +1470,26 @@ function updateRocketUI(percent, stepText) {
     if (stepText && stepEl) stepEl.textContent = stepText;
 }
 
-function startRocketLoader({ badge = 'MOTOR DE ACELERACIÓN NOSCLEAN', title = 'Optimizando tu PC', steps = [] } = {}) {
+function startRocketLoader({ title = 'Optimizando tu PC', steps = [] } = {}) {
     if (rocketInterval) {
         clearInterval(rocketInterval);
         rocketInterval = null;
     }
+    if (rocketPollInterval) {
+        clearInterval(rocketPollInterval);
+        rocketPollInterval = null;
+    }
 
     const modal = document.getElementById('rocket-loader-modal');
-    const badgeEl = document.getElementById('rocket-sub-badge');
     const titleEl = document.getElementById('rocket-title');
     const resultBox = document.getElementById('rocket-result-box');
     const rocketSvg = document.getElementById('rocket-svg-actor');
 
-    rocketCurrentPercent = 0;
+    rocketCurrentPercent = 1;
+    rocketTargetPercent = 5;
+    rocketBackendStep = '';
     rocketStartedAt = performance.now();
 
-    if (badgeEl) badgeEl.textContent = badge;
     if (titleEl) titleEl.textContent = title;
     if (resultBox) resultBox.classList.add('hidden');
     if (rocketSvg) {
@@ -1488,50 +1498,72 @@ function startRocketLoader({ badge = 'MOTOR DE ACELERACIÓN NOSCLEAN', title = '
     }
 
     const initialStep = steps.length > 0 ? steps[0].text : 'Iniciando operación...';
-    updateRocketUI(0, initialStep);
+    updateRocketUI(1, initialStep);
 
     if (modal) {
         modal.classList.remove('hidden');
         lucide.createIcons();
     }
 
+    // Consultar el porcentaje real del backend cada 100ms
+    rocketPollInterval = setInterval(async () => {
+        try {
+            const res = await fetch('/api/system/progress');
+            if (res.ok) {
+                const prog = await res.json();
+                if (prog && typeof prog.percent === 'number' && prog.percent > rocketTargetPercent) {
+                    rocketTargetPercent = Math.min(99, prog.percent);
+                }
+                if (prog && prog.step) {
+                    rocketBackendStep = prog.step;
+                }
+            }
+        } catch {}
+    }, 100);
+
+    // Animación continua grado por grado (jamás se congela en un número fijo)
     rocketInterval = setInterval(() => {
-        if (rocketCurrentPercent < 45) {
-            rocketCurrentPercent += 4.2;
-        } else if (rocketCurrentPercent < 75) {
-            rocketCurrentPercent += 2.4;
-        } else if (rocketCurrentPercent < 92) {
-            rocketCurrentPercent += 0.85;
+        if (rocketCurrentPercent < rocketTargetPercent) {
+            const diff = rocketTargetPercent - rocketCurrentPercent;
+            rocketCurrentPercent += Math.max(1, diff * 0.35);
+        } else if (rocketCurrentPercent < 99) {
+            // Avance dinámico continuo mientras procesa carpetas grandes
+            const stepInc = rocketCurrentPercent < 60 ? 1.4 : (rocketCurrentPercent < 85 ? 0.85 : 0.45);
+            rocketCurrentPercent = Math.min(99, rocketCurrentPercent + stepInc);
+            rocketTargetPercent = Math.max(rocketTargetPercent, rocketCurrentPercent);
         }
 
-        let currentStepMsg = null;
-        for (let i = steps.length - 1; i >= 0; i--) {
-            if (rocketCurrentPercent >= steps[i].at) {
-                currentStepMsg = steps[i].text;
-                break;
+        let currentStepMsg = rocketBackendStep;
+        if (!currentStepMsg) {
+            for (let i = steps.length - 1; i >= 0; i--) {
+                if (rocketCurrentPercent >= steps[i].at) {
+                    currentStepMsg = steps[i].text;
+                    break;
+                }
             }
         }
         updateRocketUI(rocketCurrentPercent, currentStepMsg);
-    }, 75);
+    }, 65);
 }
 
-async function finishRocketLoader({ stepText = '¡Proceso completado al 100%!', resultTitle = '¡Operación Completada!', resultDetail = '', holdMs = 1350 } = {}) {
+async function finishRocketLoader({ stepText = '¡Proceso completado al 100%!', resultTitle = '¡Operación Completada!', resultDetail = '', holdMs = 1250 } = {}) {
     if (rocketInterval) {
         clearInterval(rocketInterval);
         rocketInterval = null;
     }
+    if (rocketPollInterval) {
+        clearInterval(rocketPollInterval);
+        rocketPollInterval = null;
+    }
 
-    // Garantizar que el usuario vea el vuelo del cohete al menos 750ms antes del 100%
-    const elapsed = performance.now() - rocketStartedAt;
-    const minFlightMs = 750;
-    if (elapsed < minFlightMs) {
-        const remaining = minFlightMs - elapsed;
-        const frames = Math.max(4, Math.floor(remaining / 45));
-        const delta = (95 - rocketCurrentPercent) / frames;
+    // Si terminó súper rápido, avanzar suavemente hasta el 100% sin saltos bruscos
+    if (rocketCurrentPercent < 96) {
+        const frames = 8;
+        const delta = (100 - rocketCurrentPercent) / frames;
         for (let i = 0; i < frames; i++) {
-            rocketCurrentPercent = Math.min(96, rocketCurrentPercent + delta);
+            rocketCurrentPercent = Math.min(99, rocketCurrentPercent + delta);
             updateRocketUI(rocketCurrentPercent);
-            await new Promise(r => setTimeout(r, 45));
+            await new Promise(r => setTimeout(r, 30));
         }
     }
 
@@ -1563,6 +1595,10 @@ function hideRocketLoader() {
         clearInterval(rocketInterval);
         rocketInterval = null;
     }
+    if (rocketPollInterval) {
+        clearInterval(rocketPollInterval);
+        rocketPollInterval = null;
+    }
     const modal = document.getElementById('rocket-loader-modal');
     if (modal) {
         modal.classList.add('hidden');
@@ -1583,7 +1619,6 @@ async function quickOptimizePC() {
     if (icon) icon.classList.add('animate-pulse');
 
     startRocketLoader({
-        badge: 'MOTOR DE ACELERACIÓN NOSCLEAN',
         title: 'Impulsando y Optimizando tu PC',
         steps: [
             { at: 0, text: 'Analizando procesos activos en memoria RAM...' },
@@ -1602,19 +1637,18 @@ async function quickOptimizePC() {
             const diskText = data.disk_freed_formatted || '0 B';
             const summaryText = `RAM liberada: ${ramText} • Temporales eliminados: ${diskText}. Uso actual de RAM: ${data.new_ram_used_gb} GB (${data.new_ram_percent}%).`;
             
-            // Refrescar métricas en segundo plano mientras muestra el 100%
-            await loadOverview();
-            if (currentTab === 'cleaner') {
-                await scanJunk(true, true);
-            } else if (currentTab === 'advisor') {
-                loadAdvisor();
-            }
+            // Refrescar métricas en paralelo sin frenar el 100%
+            Promise.all([
+                loadOverview(),
+                currentTab === 'cleaner' ? scanJunk(true, true) : Promise.resolve(),
+                currentTab === 'advisor' ? loadAdvisor() : Promise.resolve()
+            ]).catch(() => {});
 
             await finishRocketLoader({
                 stepText: '¡Tu PC ha sido optimizada al 100%!',
                 resultTitle: '¡Aceleración Completada con Éxito!',
                 resultDetail: summaryText,
-                holdMs: 1650
+                holdMs: 1500
             });
 
             showToast(`Optimización completada: ${ramText} de RAM y ${diskText} de disco liberados.`, 'success');

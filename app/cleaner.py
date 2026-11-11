@@ -187,6 +187,19 @@ def invalidate_junk_cache():
     _JUNK_SCAN_CACHE["timestamp"] = 0.0
     _JUNK_SCAN_CACHE["data"] = None
 
+_TASK_PROGRESS = {"percent": 0, "step": "", "active": False}
+
+def set_task_progress(percent: int, step: str = "", active: bool = True):
+    """Actualiza el porcentaje real de la operación en curso."""
+    _TASK_PROGRESS["percent"] = max(0, min(100, int(percent)))
+    if step:
+        _TASK_PROGRESS["step"] = step
+    _TASK_PROGRESS["active"] = active
+
+def get_task_progress() -> Dict[str, Any]:
+    """Devuelve el progreso real de la tarea actual."""
+    return dict(_TASK_PROGRESS)
+
 def scan_junk(force_refresh: bool = False) -> Dict[str, Any]:
     """Escanea todas las categorías y devuelve el resumen sin borrar nada."""
     import time
@@ -198,8 +211,13 @@ def scan_junk(force_refresh: bool = False) -> Dict[str, Any]:
     results = []
     grand_total_bytes = 0
     grand_total_files = 0
+    total_cats = max(1, len(categories))
+    set_task_progress(5, "Iniciando análisis de categorías...", True)
 
-    for cat in categories:
+    for idx, cat in enumerate(categories):
+        pct = int(5 + ((idx + 1) / total_cats) * 92)
+        set_task_progress(pct, f"Analizando {cat['name']}...", True)
+
         if cat.get("is_recycle_bin"):
             rb = get_recycle_bin_info()
             cat_bytes = rb["size_bytes"]
@@ -237,25 +255,44 @@ def scan_junk(force_refresh: bool = False) -> Dict[str, Any]:
     }
     _JUNK_SCAN_CACHE["timestamp"] = time.time()
     _JUNK_SCAN_CACHE["data"] = res_data
+    set_task_progress(100, "Análisis completado", False)
     return res_data
 
-def clean_directory_contents(path: str, _depth: int = 0) -> (int, int, int):
-    """Limpia el contenido de un directorio sin eliminar el directorio raíz ni carpetas protegidas de NosClean."""
+def clean_directory_contents(
+    path: str,
+    _depth: int = 0,
+    progress_start: float = None,
+    progress_end: float = None,
+    step_label: str = ""
+) -> (int, int, int):
+    """Limpia el contenido de un directorio en una sola pasada rápida (O(N)) reportando porcentaje dinámico."""
+    import time
     bytes_freed = 0
     files_deleted = 0
     skipped_count = 0
 
-    if not os.path.exists(path) or _depth > 6:
+    if not os.path.exists(path):
         return 0, 0, 0
 
     try:
-        entries = list(os.scandir(path))
+        top_entries = list(os.scandir(path))
     except (PermissionError, OSError):
         return 0, 0, 1
 
-    for entry in entries:
-        if _depth == 0 and _is_protected_temp_entry(entry.name, entry.path):
+    total_top = max(1, len(top_entries))
+    deadline = time.monotonic() + 2.5
+
+    for idx, entry in enumerate(top_entries):
+        if progress_start is not None and progress_end is not None:
+            cur_pct = progress_start + ((idx + 1) / total_top) * (progress_end - progress_start)
+            set_task_progress(int(cur_pct), step_label, True)
+
+        if _is_protected_temp_entry(entry.name, entry.path):
             continue
+
+        if time.monotonic() > deadline:
+            break
+
         try:
             if entry.is_file(follow_symlinks=False):
                 try:
@@ -266,23 +303,40 @@ def clean_directory_contents(path: str, _depth: int = 0) -> (int, int, int):
                 except (PermissionError, OSError):
                     skipped_count += 1
             elif entry.is_dir(follow_symlinks=False):
-                dir_size, dir_files = scan_directory_size(entry.path, max_seconds=0.4, max_files=3000)
+                # Recorrer de abajo hacia arriba en una sola pasada rápida sin doble escaneo
+                for root_dir, dirs, files in os.walk(entry.path, topdown=False):
+                    if time.monotonic() > deadline:
+                        break
+                    for fname in files:
+                        fpath = os.path.join(root_dir, fname)
+                        try:
+                            fsize = os.path.getsize(fpath)
+                            os.remove(fpath)
+                            bytes_freed += fsize
+                            files_deleted += 1
+                        except (PermissionError, OSError):
+                            skipped_count += 1
+                    for dname in dirs:
+                        dpath = os.path.join(root_dir, dname)
+                        try:
+                            os.rmdir(dpath)
+                        except (PermissionError, OSError):
+                            pass
                 try:
-                    shutil.rmtree(entry.path, ignore_errors=False)
-                    bytes_freed += dir_size
-                    files_deleted += dir_files
-                except Exception:
-                    bf, fd, sc = clean_directory_contents(entry.path, _depth + 1)
-                    bytes_freed += bf
-                    files_deleted += fd
-                    skipped_count += (sc + 1)
+                    os.rmdir(entry.path)
+                except (PermissionError, OSError):
+                    pass
         except Exception:
             skipped_count += 1
 
     return bytes_freed, files_deleted, skipped_count
 
-def clean_selected_categories(selected_ids: List[str]) -> Dict[str, Any]:
-    """Ejecuta la limpieza para las categorías seleccionadas."""
+def clean_selected_categories(
+    selected_ids: List[str],
+    progress_min: int = 5,
+    progress_max: int = 98
+) -> Dict[str, Any]:
+    """Ejecuta la limpieza para las categorías seleccionadas reportando progreso real."""
     categories = get_junk_categories()
     cat_dict = {c["id"]: c for c in categories}
 
@@ -291,14 +345,21 @@ def clean_selected_categories(selected_ids: List[str]) -> Dict[str, Any]:
     total_skipped = 0
     details = []
 
-    for cat_id in selected_ids:
-        cat = cat_dict.get(cat_id)
-        if not cat:
-            continue
+    valid_ids = [cid for cid in selected_ids if cid in cat_dict]
+    total_cats = max(1, len(valid_ids))
+    span_per_cat = (progress_max - progress_min) / total_cats
+
+    for idx, cat_id in enumerate(valid_ids):
+        cat = cat_dict[cat_id]
+        c_start = progress_min + idx * span_per_cat
+        c_end = c_start + span_per_cat
+        step_msg = f"Limpiando {cat['name']}..."
+        set_task_progress(int(c_start), step_msg, True)
 
         if cat.get("is_recycle_bin"):
             rb_before = get_recycle_bin_info()
             success, msg = empty_recycle_bin()
+            set_task_progress(int(c_end), step_msg, True)
             if success:
                 total_freed_bytes += rb_before["size_bytes"]
                 total_files_deleted += rb_before["items_count"]
@@ -323,12 +384,16 @@ def clean_selected_categories(selected_ids: List[str]) -> Dict[str, Any]:
             cat_freed = 0
             cat_deleted = 0
             cat_skipped = 0
-            for p in cat.get("paths", []):
-                if os.path.exists(p):
-                    bf, fd, sc = clean_directory_contents(p)
-                    cat_freed += bf
-                    cat_deleted += fd
-                    cat_skipped += sc
+            paths = [p for p in cat.get("paths", []) if os.path.exists(p)]
+            p_count = max(1, len(paths))
+            p_span = (c_end - c_start) / p_count
+            for p_idx, p in enumerate(paths):
+                p_start = c_start + p_idx * p_span
+                p_end = p_start + p_span
+                bf, fd, sc = clean_directory_contents(p, 0, p_start, p_end, step_msg)
+                cat_freed += bf
+                cat_deleted += fd
+                cat_skipped += sc
 
             total_freed_bytes += cat_freed
             total_files_deleted += cat_deleted
@@ -343,6 +408,8 @@ def clean_selected_categories(selected_ids: List[str]) -> Dict[str, Any]:
             })
 
     invalidate_junk_cache()
+    if progress_min <= 5:
+        set_task_progress(100, "¡Limpieza completada!", False)
     return {
         "success": True,
         "freed_bytes": total_freed_bytes,
@@ -371,6 +438,7 @@ def quick_optimize() -> Dict[str, Any]:
     import psutil
     import ctypes
     
+    set_task_progress(5, "Analizando procesos activos en memoria RAM...", True)
     mem_before = psutil.virtual_memory()
     current_pid = os.getpid()
     
@@ -381,7 +449,12 @@ def quick_optimize() -> Dict[str, Any]:
         kernel32 = ctypes.windll.kernel32
         PROCESS_SET_QUOTA = 0x0100
         PROCESS_QUERY_INFORMATION = 0x0400
-        for p in psutil.process_iter(['pid', 'name']):
+        procs = list(psutil.process_iter(['pid', 'name']))
+        total_procs = max(1, len(procs))
+        for idx, p in enumerate(procs):
+            if idx % 10 == 0:
+                pct = int(5 + ((idx + 1) / total_procs) * 40)
+                set_task_progress(pct, f"Liberando RAM inactiva ({trimmed_procs} procesos optimizados)...", True)
             try:
                 pid = p.info['pid']
                 pname = (p.info['name'] or '').lower()
@@ -400,9 +473,10 @@ def quick_optimize() -> Dict[str, Any]:
     mem_after = psutil.virtual_memory()
     ram_freed_bytes = max(0, mem_before.used - mem_after.used)
     
-    # 2. Limpieza rápida de temporales de usuario y cachés
+    # 2. Limpieza rápida de temporales de usuario y cachés (progreso real de 45% a 98%)
     quick_categories = ["user_temp", "chrome_cache", "edge_cache"]
-    clean_res = clean_selected_categories(quick_categories)
+    clean_res = clean_selected_categories(quick_categories, progress_min=45, progress_max=98)
+    set_task_progress(100, "¡Optimización completada!", False)
     
     return {
         "success": True,

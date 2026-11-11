@@ -159,29 +159,24 @@ def create_windows_shortcut(target_type: str = "desktop"):
             except Exception:
                 pass
 
-        # 5. Manejar solicitud de Barra de Tareas
+        # 5. Actualizar siempre los accesos en la carpeta de la Barra de Tareas (para no dejar rutas antiguas)
+        if os.path.exists(taskbar_dir):
+            try:
+                for tb_name in ["NosClean.lnk", "NosClean (2).lnk"]:
+                    tb_lnk = os.path.join(taskbar_dir, tb_name)
+                    if os.path.exists(tb_lnk) or tb_name == "NosClean.lnk":
+                        s_tb = shell.CreateShortCut(tb_lnk)
+                        s_tb.TargetPath = exe_path
+                        s_tb.WorkingDirectory = base_dir
+                        s_tb.Description = "NosClean - Suite de Auditoría, Optimización y Limpieza para Windows"
+                        if os.path.exists(ico_path):
+                            s_tb.IconLocation = f"{ico_path},0"
+                        s_tb.save()
+            except Exception:
+                pass
+
+        # 6. Manejar solicitud explícita de Barra de Tareas
         if target_type == "taskbar":
-            if os.path.exists(taskbar_dir):
-                try:
-                    taskbar_lnk = os.path.join(taskbar_dir, "NosClean.lnk")
-                    s_tb = shell.CreateShortCut(taskbar_lnk)
-                    s_tb.TargetPath = exe_path
-                    s_tb.WorkingDirectory = base_dir
-                    s_tb.Description = "NosClean - Suite de Auditoría, Optimización y Limpieza para Windows"
-                    if os.path.exists(ico_path):
-                        s_tb.IconLocation = f"{ico_path},0"
-                    s_tb.save()
-
-                    # Eliminar duplicados si existían
-                    dup_tb = os.path.join(taskbar_dir, "NosClean (2).lnk")
-                    if os.path.exists(dup_tb):
-                        try:
-                            os.remove(dup_tb)
-                        except Exception:
-                            pass
-                except Exception:
-                    pass
-
             # Abrir el Explorador de Windows con el ejecutable seleccionado
             target_to_select = exe_path if os.path.exists(exe_path) else desktop_lnk
             try:
