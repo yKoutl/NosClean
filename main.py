@@ -218,10 +218,10 @@ def api_action_restart_admin():
         threading.Thread(target=delayed_exit, daemon=True).start()
     return {"success": True, "message": msg, "data": data}
 
-def launch_browser():
+def launch_browser(port: int = 8000):
     import time, subprocess
     time.sleep(0.7)
-    url = "http://127.0.0.1:8000"
+    url = f"http://127.0.0.1:{port}"
     edge_paths = [
         r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
         r"C:\Program Files\Microsoft\Edge\Application\msedge.exe"
@@ -254,66 +254,72 @@ if __name__ == "__main__":
     except Exception:
         pass
 
-    def is_port_in_use(port=8000):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            try:
-                s.bind(('127.0.0.1', port))
-                return False
-            except OSError:
-                return True
+    def get_available_port():
+        for candidate in [8000, 8008, 8088, 8888, 0]:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                try:
+                    s.bind(('127.0.0.1', candidate))
+                    return s.getsockname()[1]
+                except OSError:
+                    continue
+        return 8000
 
-    # Si viene de un reinicio elevado (--elevated-restart), esperar a que la instancia anterior libere el puerto 8000
-    if "--elevated-restart" in sys.argv:
-        for _ in range(45):
-            if not is_port_in_use(8000):
-                break
-            time.sleep(0.1)
+    # Limpieza automática de instancias previas huérfanas para evitar puertos y cachés bloqueadas
+    current_pid = os.getpid()
+    if "--elevated-restart" not in sys.argv:
+        try:
+            import psutil
+            for p in psutil.process_iter(['pid', 'name']):
+                if p.info['pid'] != current_pid and 'nosclean' in (p.info['name'] or '').lower():
+                    try:
+                        p.kill()
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+    app_port = get_available_port()
 
     ico_path = os.path.join(BASE_DIR, "NosClean.ico")
     if not os.path.exists(ico_path):
         ico_path = os.path.join(STATIC_DIR, "favicon.ico")
 
-    # Iniciar servidor backend FastAPI en segundo plano si no está corriendo
-    server_running = is_port_in_use(8000)
-    if not server_running:
-        def run_server():
+    # Iniciar servidor backend FastAPI en segundo plano en el puerto disponible
+    def run_server():
+        try:
+            config = uvicorn.Config(
+                app=app,
+                host="127.0.0.1",
+                port=app_port,
+                loop="asyncio",
+                http="h11",
+                lifespan="off",
+                log_config=None,  # Evita el fallo de DefaultFormatter en ejecutables sin consola
+                log_level="critical"
+            )
+            server = uvicorn.Server(config)
+            server.run()
+        except Exception as e:
+            log_path = os.path.join(os.environ.get("TEMP", "."), "nosclean_error.log")
             try:
-                config = uvicorn.Config(
-                    app=app,
-                    host="127.0.0.1",
-                    port=8000,
-                    loop="asyncio",
-                    http="h11",
-                    lifespan="off",
-                    log_config=None,  # Evita el fallo de DefaultFormatter en ejecutables sin consola
-                    log_level="critical"
-                )
-                server = uvicorn.Server(config)
-                server.run()
-            except Exception as e:
-                log_path = os.path.join(os.environ.get("TEMP", "."), "nosclean_error.log")
-                try:
-                    with open(log_path, "a", encoding="utf-8") as f:
-                        f.write(f"Server error: {e}\n")
-                except Exception:
-                    pass
+                with open(log_path, "a", encoding="utf-8") as f:
+                    f.write(f"Server error: {e}\n")
+            except Exception:
+                pass
 
-        server_thread = threading.Thread(target=run_server, daemon=True)
-        server_thread.start()
-        # Esperar hasta que uvicorn esté listo para responder (aprox 150 ms)
-        for _ in range(60):
-            time.sleep(0.05)
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.settimeout(0.05)
-                if s.connect_ex(('127.0.0.1', 8000)) == 0:
-                    break
+    server_thread = threading.Thread(target=run_server, daemon=True)
+    server_thread.start()
+
+    # Esperar hasta que uvicorn esté listo para responder (aprox 150 ms)
+    for _ in range(60):
+        time.sleep(0.05)
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(0.05)
+            if s.connect_ex(('127.0.0.1', app_port)) == 0:
+                break
 
     # Lanzar la aplicación en ventana de escritorio nativa WebView2 (icono verde propio, cero Edge)
     try:
-        # Evitar degradación de GPU / Sandbox cuando se ejecuta con permisos de Administrador
-        os.environ["WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"] = (
-            "--disable-features=RendererCodeIntegrity,ElasticOverscroll --disable-gpu-sandbox"
-        )
         cache_name = "WebView2Cache_Admin" if is_admin() else "WebView2Cache"
         wv_storage = os.path.join(
             os.environ.get("LOCALAPPDATA", os.environ.get("TEMP", ".")),
@@ -326,7 +332,7 @@ if __name__ == "__main__":
         window_title = 'NosClean (Administrador)' if is_admin() else 'NosClean'
         window = webview.create_window(
             title=window_title,
-            url='http://127.0.0.1:8000',
+            url=f'http://127.0.0.1:{app_port}',
             width=1280,
             height=820,
             min_size=(960, 640)
@@ -337,9 +343,16 @@ if __name__ == "__main__":
             storage_path=wv_storage
         )
         os._exit(0)
-    except BaseException:
+    except BaseException as e:
+        import traceback
+        log_path = os.path.join(os.environ.get("TEMP", "."), "nosclean_error.log")
+        try:
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(f"Webview Error: {e}\n{traceback.format_exc()}\n")
+        except Exception:
+            pass
         # Fallback ultra-resiliente: si WebView2 o DLLs fallan en otra PC, abrir en navegador y mantener servidor vivo
-        launch_browser()
+        launch_browser(app_port)
         try:
             while True:
                 time.sleep(1)
