@@ -29,8 +29,8 @@ async function initApp() {
     } catch (e) {
         console.warn("Aviso al iniciar modulos:", e);
     }
-    // Auto-refresh metrics every 20 seconds
-    setInterval(updateQuickMetrics, 20000);
+    // Auto-refresh metrics every 5 seconds so numbers on screen are always real-time
+    setInterval(updateQuickMetrics, 5000);
 
     // Ocultar y remover suavemente el Splash Loader (Capa 4: Cero Pantallas Blancas)
     const splash = document.getElementById('nosclean-splash-loader');
@@ -137,6 +137,8 @@ function switchTab(tabId) {
     // Lazy load tab contents if first time
     if (tabId === 'advisor') {
         loadAdvisor();
+    } else if (tabId === 'overview') {
+        loadOverview(true);
     } else if (tabId === 'cleaner' && !junkData) {
         scanJunk();
     } else if (tabId === 'heavy' && !heavyScannedOnce) {
@@ -195,7 +197,7 @@ function refreshCurrentTab() {
     }
 
     if (currentTab === 'advisor') loadAdvisor();
-    else if (currentTab === 'overview') loadOverview();
+    else if (currentTab === 'overview') loadOverview(true);
     else if (currentTab === 'cleaner') scanJunk(true);
     else if (currentTab === 'heavy') scanHeavyFiles();
     else if (currentTab === 'apps') loadInstalledApps();
@@ -330,8 +332,10 @@ async function loadAdvisor() {
 }
 
 // ======================== TAB 1: OVERVIEW ========================
-async function loadOverview() {
-    const data = await apiGet('/api/system/overview');
+let lastOptimizeTimestamp = 0;
+
+async function loadOverview(force = false) {
+    const data = await apiGet(`/api/system/overview${force ? '?force=true' : ''}`);
     if (!data) return;
     systemOverviewData = data;
     updateAdminBadgeUI(Boolean(data.is_admin || (data.os && data.os.is_admin)));
@@ -433,6 +437,8 @@ async function loadOverview() {
 }
 
 async function updateQuickMetrics() {
+    // No sobrescribir la tarjeta recién optimizada durante los primeros 6 segundos
+    if (Date.now() - lastOptimizeTimestamp < 6000) return;
     const data = await apiGet('/api/system/overview');
     if (!data) return;
     document.getElementById('cpu-usage').textContent = `${data.cpu.usage_percent}%`;
@@ -1633,25 +1639,35 @@ async function quickOptimizePC() {
         const data = await res.json();
 
         if (data.success) {
+            lastOptimizeTimestamp = Date.now();
             const ramText = data.ram_freed_formatted || '0 B';
             const diskText = data.disk_freed_formatted || '0 B';
-            const summaryText = `RAM liberada: ${ramText} • Temporales eliminados: ${diskText}. Uso actual de RAM: ${data.new_ram_used_gb} GB (${data.new_ram_percent}%).`;
+            const beforeRam = data.before_ram_used_formatted || `${data.before_ram_used_gb} GB`;
+            const afterRam = data.new_ram_used_formatted || `${data.new_ram_used_gb} GB`;
+            const summaryText = `RAM reducida de ${beforeRam} a ${afterRam} (-${ramText} liberados) • Temporales eliminados: ${diskText}.`;
             
-            // Refrescar métricas en paralelo sin frenar el 100%
-            Promise.all([
-                loadOverview(),
-                currentTab === 'cleaner' ? scanJunk(true, true) : Promise.resolve(),
-                currentTab === 'advisor' ? loadAdvisor() : Promise.resolve()
-            ]).catch(() => {});
+            // Actualizar la tarjeta de RAM con la medición exacta posterior a EmptyWorkingSet
+            await loadOverview(true);
+            if (data.new_ram_used_formatted) {
+                document.getElementById('ram-used').textContent = data.new_ram_used_formatted;
+                document.getElementById('ram-free').textContent = `Disponible: ${data.new_ram_free_formatted}`;
+                document.getElementById('ram-bar').style.width = `${data.new_ram_percent}%`;
+            }
+
+            if (currentTab === 'cleaner') {
+                scanJunk(true, true);
+            } else if (currentTab === 'advisor') {
+                loadAdvisor();
+            }
 
             await finishRocketLoader({
                 stepText: '¡Tu PC ha sido optimizada al 100%!',
-                resultTitle: '¡Aceleración Completada con Éxito!',
+                resultTitle: `¡RAM reducida a ${afterRam} (-${ramText})!`,
                 resultDetail: summaryText,
-                holdMs: 1500
+                holdMs: 1650
             });
 
-            showToast(`Optimización completada: ${ramText} de RAM y ${diskText} de disco liberados.`, 'success');
+            showToast(`Optimización completada: RAM bajó de ${beforeRam} a ${afterRam} (-${ramText}).`, 'success');
         } else {
             hideRocketLoader();
             showToast('Ocurrió un error al optimizar el equipo.', 'error');

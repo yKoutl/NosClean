@@ -75,8 +75,8 @@ def api_advisor_recommendations():
 
 # ================== RUTAS DE SISTEMA ==================
 @app.get("/api/system/overview")
-def api_system_overview():
-    return get_system_overview()
+def api_system_overview(force: bool = False):
+    return get_system_overview(force_refresh=force)
 
 @app.get("/api/system/processes")
 def api_system_processes(limit: int = 15):

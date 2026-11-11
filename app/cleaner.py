@@ -419,32 +419,44 @@ def clean_selected_categories(
         "details": details
     }
 
-# Procesos críticos del sistema y del propio motor gráfico de NosClean que jamás deben paginarse a disco
+# Procesos críticos del kernel que no deben paginarse
 PROTECTED_SYSTEM_PROCS = {
     "system", "registry", "smss.exe", "csrss.exe", "wininit.exe",
-    "services.exe", "lsass.exe", "svchost.exe", "dwm.exe", "explorer.exe",
-    "fontdrvhost.exe", "wmiprvse.exe", "searchindexer.exe", "searchhost.exe",
-    "startmenuexperiencehost.exe", "shellexperiencehost.exe", "sihost.exe",
-    "taskhostw.exe", "ctfmon.exe", "audiodg.exe", "spoolsv.exe",
-    "msmpeng.exe", "securityhealthservice.exe", "nosclean.exe",
-    "msedgewebview2.exe", "python.exe", "pythonw.exe"
+    "services.exe", "lsass.exe", "dwm.exe", "fontdrvhost.exe",
+    "audiodg.exe", "nosclean.exe"
 }
 
 def quick_optimize() -> Dict[str, Any]:
     """Optimización rápida en 1 clic:
-    1. Vacía la memoria de procesos inactivos de usuario (excluyendo servicios críticos de Windows y NosClean).
-    2. Limpia temporales seguros de usuario y cachés de navegadores.
-    3. Retorna estadísticas precisas antes y después."""
+    1. Primero limpia temporales seguros de usuario y cachés de navegadores (para que el I/O de disco ocurra antes de liberar RAM).
+    2. Luego vacía el Working Set de procesos en memoria RAM (excluyendo kernel y el propio NosClean).
+    3. Invalida la caché de monitoreo y retorna estadísticas exactas antes y después."""
     import psutil
     import ctypes
+    import gc
+    from app.auditor import invalidate_overview_cache
     
-    set_task_progress(5, "Analizando procesos activos en memoria RAM...", True)
+    set_task_progress(5, "Iniciando depuración de archivos temporales...", True)
     mem_before = psutil.virtual_memory()
     current_pid = os.getpid()
+
+    # Identificar árbol de procesos propio de NosClean (incluyendo su WebView2 hijo) para no tocar su ventana
+    nosclean_pids = {current_pid}
+    try:
+        curr_proc = psutil.Process(current_pid)
+        for child in curr_proc.children(recursive=True):
+            nosclean_pids.add(child.pid)
+    except Exception:
+        pass
+
+    # 1. Limpieza rápida de temporales y cachés PRIMERO (5% a 52%)
+    quick_categories = ["user_temp", "chrome_cache", "edge_cache", "windows_temp", "crash_dumps"]
+    clean_res = clean_selected_categories(quick_categories, progress_min=5, progress_max=52)
     
-    # 1. Optimizar RAM de forma segura (sin paginar procesos críticos de Windows ni WebView2 cuando es Admin)
+    # 2. Optimizar RAM al final para que quede en su punto más bajo al terminar (52% a 98%)
     trimmed_procs = 0
     try:
+        gc.collect()
         psapi = ctypes.windll.psapi
         kernel32 = ctypes.windll.kernel32
         PROCESS_SET_QUOTA = 0x0100
@@ -452,13 +464,13 @@ def quick_optimize() -> Dict[str, Any]:
         procs = list(psutil.process_iter(['pid', 'name']))
         total_procs = max(1, len(procs))
         for idx, p in enumerate(procs):
-            if idx % 10 == 0:
-                pct = int(5 + ((idx + 1) / total_procs) * 40)
-                set_task_progress(pct, f"Liberando RAM inactiva ({trimmed_procs} procesos optimizados)...", True)
+            if idx % 8 == 0:
+                pct = int(52 + ((idx + 1) / total_procs) * 46)
+                set_task_progress(pct, f"Liberando memoria RAM inactiva ({trimmed_procs} procesos optimizados)...", True)
             try:
                 pid = p.info['pid']
                 pname = (p.info['name'] or '').lower()
-                if pid <= 4 or pid == current_pid or pname in PROTECTED_SYSTEM_PROCS:
+                if pid <= 4 or pid in nosclean_pids or pname in PROTECTED_SYSTEM_PROCS:
                     continue
                 h = kernel32.OpenProcess(PROCESS_SET_QUOTA | PROCESS_QUERY_INFORMATION, False, pid)
                 if h:
@@ -472,10 +484,7 @@ def quick_optimize() -> Dict[str, Any]:
         
     mem_after = psutil.virtual_memory()
     ram_freed_bytes = max(0, mem_before.used - mem_after.used)
-    
-    # 2. Limpieza rápida de temporales de usuario y cachés (progreso real de 45% a 98%)
-    quick_categories = ["user_temp", "chrome_cache", "edge_cache"]
-    clean_res = clean_selected_categories(quick_categories, progress_min=45, progress_max=98)
+    invalidate_overview_cache()
     set_task_progress(100, "¡Optimización completada!", False)
     
     return {
@@ -486,8 +495,12 @@ def quick_optimize() -> Dict[str, Any]:
         "disk_freed_formatted": clean_res.get("freed_formatted", "0 B"),
         "files_deleted": clean_res.get("total_files_deleted", 0),
         "processes_optimized": trimmed_procs,
+        "before_ram_used_gb": round(mem_before.used / (1024**3), 2),
+        "before_ram_used_formatted": format_size(mem_before.used),
         "new_ram_percent": mem_after.percent,
         "new_ram_used_gb": round(mem_after.used / (1024**3), 2),
+        "new_ram_used_formatted": format_size(mem_after.used),
+        "new_ram_free_formatted": format_size(mem_after.available),
         "new_ram_total_gb": round(mem_after.total / (1024**3), 2),
         "new_ram_avail_gb": round(mem_after.available / (1024**3), 2),
     }

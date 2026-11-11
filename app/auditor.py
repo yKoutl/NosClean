@@ -81,6 +81,11 @@ def get_gpu_info():
     _CACHED_GPUS = gpus
     return _CACHED_GPUS
 
+def invalidate_overview_cache():
+    """Invalida la caché de estado del sistema tras una limpieza u optimización."""
+    _OVERVIEW_CACHE["timestamp"] = 0.0
+    _OVERVIEW_CACHE["data"] = None
+
 def get_system_overview(force_refresh: bool = False):
     """Genera la auditoría de especificaciones del sistema al instante."""
     now = time.time()
