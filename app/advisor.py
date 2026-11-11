@@ -1,9 +1,12 @@
 import os
+import time
 from typing import Dict, Any
 from app.auditor import get_system_overview
 from app.cleaner import scan_junk
 from app.software import get_startup_applications
 from app.organizer import scan_target_folder
+
+_ADVICE_CACHE = {"timestamp": 0.0, "data": None}
 
 # Lista de programas de inicio que típicamente retrasan el arranque y son seguros de desactivar
 OPTIONAL_STARTUP_APPS = [
@@ -17,8 +20,12 @@ def generate_pc_advice() -> Dict[str, Any]:
     Analiza el estado actual del equipo y genera un diagnóstico inteligente
     con consejos personalizados, puntuación de salud y prioridades de limpieza.
     """
+    now = time.time()
+    if _ADVICE_CACHE["data"] is not None and (now - _ADVICE_CACHE["timestamp"] < 10.0):
+        return _ADVICE_CACHE["data"]
+
     system = get_system_overview()
-    junk = scan_junk()
+    junk = scan_junk(track_progress=False)
     startup = get_startup_applications()
     downloads_path = os.path.join(os.path.expanduser("~"), "Downloads")
     downloads_info = scan_target_folder(downloads_path)
@@ -174,9 +181,12 @@ def generate_pc_advice() -> Dict[str, Any]:
     elif score < 80:
         health_status = "Bueno con Oportunidades de Mejora"
 
-    return {
+    res = {
         "is_admin": is_admin_active,
         "health_score": score,
         "health_status": health_status,
         "recommendations": recommendations
     }
+    _ADVICE_CACHE["timestamp"] = time.time()
+    _ADVICE_CACHE["data"] = res
+    return res

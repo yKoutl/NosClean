@@ -561,7 +561,6 @@ async function executeJunkClean(selectedCategories) {
     if (btn) btn.disabled = true;
 
     startRocketLoader({
-        badge: 'MOTOR DE LIMPIEZA NOSCLEAN',
         title: 'Eliminando Archivos Basura',
         steps: [
             { at: 0, text: 'Verificando archivos abiertos y protecciones del sistema...' },
@@ -640,7 +639,6 @@ async function scanHeavyFiles(showLoader = true) {
     const minSize = parseInt(minSizeSelect.value) || 100;
     if (showLoader) {
         startRocketLoader({
-            badge: 'RADAR DE ALMACENAMIENTO NOSCLEAN',
             title: 'Buscando Archivos Pesados',
             steps: [
                 { at: 0, text: `Explorando ruta: ${targetPath}...` },
@@ -1002,7 +1000,6 @@ async function organizeFiles(simulate) {
             `Los archivos sueltos se moverán a carpetas clasificadas (ej: Descargas/Instaladores, Descargas/Documentos, etc.). Tus archivos quedarán totalmente ordenados.`,
             async () => {
                 startRocketLoader({
-                    badge: 'ORGANIZADOR INTELIGENTE NOSCLEAN',
                     title: 'Clasificando y Ordenando Archivos',
                     steps: [
                         { at: 0, text: 'Analizando extensiones y tipos de archivo...' },
@@ -1511,21 +1508,27 @@ function startRocketLoader({ title = 'Optimizando tu PC', steps = [] } = {}) {
         lucide.createIcons();
     }
 
-    // Consultar el porcentaje real del backend cada 100ms
+    // Consultar el porcentaje real del backend cada 120ms
     rocketPollInterval = setInterval(async () => {
         try {
-            const res = await fetch('/api/system/progress');
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 600);
+            const res = await fetch('/api/system/progress', { signal: controller.signal });
+            clearTimeout(timeoutId);
             if (res.ok) {
                 const prog = await res.json();
-                if (prog && typeof prog.percent === 'number' && prog.percent > rocketTargetPercent) {
-                    rocketTargetPercent = Math.min(99, prog.percent);
-                }
-                if (prog && prog.step) {
-                    rocketBackendStep = prog.step;
+                // Solo tomar el progreso si la tarea del backend está activamente en ejecución
+                if (prog && prog.active) {
+                    if (typeof prog.percent === 'number' && prog.percent > rocketTargetPercent) {
+                        rocketTargetPercent = Math.min(99, prog.percent);
+                    }
+                    if (prog.step) {
+                        rocketBackendStep = prog.step;
+                    }
                 }
             }
         } catch {}
-    }, 100);
+    }, 120);
 
     // Animación continua grado por grado (jamás se congela en un número fijo)
     rocketInterval = setInterval(() => {
@@ -1605,9 +1608,15 @@ function hideRocketLoader() {
         clearInterval(rocketPollInterval);
         rocketPollInterval = null;
     }
+    rocketBackendStep = '';
+    rocketTargetPercent = 5;
     const modal = document.getElementById('rocket-loader-modal');
     if (modal) {
         modal.classList.add('hidden');
+    }
+    const resultBox = document.getElementById('rocket-result-box');
+    if (resultBox) {
+        resultBox.classList.add('hidden');
     }
 }
 

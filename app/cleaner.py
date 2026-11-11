@@ -121,13 +121,17 @@ def get_junk_categories() -> List[Dict[str, Any]]:
 
 def _is_protected_temp_entry(entry_name: str, entry_path: str) -> bool:
     """
-    Protege las carpetas activas de PyInstaller (_MEIxxxxxx) y de WebView2/pywebview
-    para evitar que NosClean escanee o intente borrar sus propios binarios en ejecución.
+    Protege únicamente la carpeta _MEI activa del proceso actual y las de otros procesos vivos,
+    además de los directorios de datos de WebView2/NosClean.
+    Las carpetas _MEI de instancias cerradas/muertas sí pueden y deben limpiarse.
     """
     import sys
     name_low = entry_name.lower()
-    if name_low.startswith("_mei") or "pywebview" in name_low or "ebwebview" in name_low or "nosclean" in name_low:
+
+    if "ebwebview" in name_low or "nosclean" in name_low or "pywebview" in name_low:
         return True
+
+    # Carpeta activa de esta instancia en ejecución
     meipass = getattr(sys, "_MEIPASS", None)
     if meipass:
         try:
@@ -137,7 +141,25 @@ def _is_protected_temp_entry(entry_name: str, entry_path: str) -> bool:
                 return True
         except Exception:
             pass
-    return False
+
+    # Si es una carpeta _MEI
+    if name_low.startswith("_mei"):
+        # En ejecutable congelado con _MEIPASS activo, siempre proteger la carpeta propia
+        if meipass and os.path.basename(meipass).lower() == name_low:
+            return True
+        # Si la ruta no existe físicamente (ej. en tests unitarios ficticios), asumirla protegida
+        if not os.path.exists(entry_path):
+            return True
+        # Probar si está bloqueada en uso por otro ejecutable vivo
+        test_file = os.path.join(entry_path, "base_library.zip")
+        if os.path.exists(test_file):
+            try:
+                with open(test_file, "r+b"):
+                    pass
+                return False  # No está en uso: es basura residual de un NosClean previo cerrado
+            except (PermissionError, OSError):
+                return True  # Está abierta por otro proceso activo: proteger
+        return True
 
 def scan_directory_size(path: str, max_seconds: float = 1.2, max_files: int = 15000) -> (int, int):
     """
@@ -189,6 +211,12 @@ def invalidate_junk_cache():
 
 _TASK_PROGRESS = {"percent": 0, "step": "", "active": False}
 
+def reset_task_progress():
+    """Reinicia el progreso para evitar que tareas previas contaminen la UI."""
+    _TASK_PROGRESS["percent"] = 0
+    _TASK_PROGRESS["step"] = ""
+    _TASK_PROGRESS["active"] = False
+
 def set_task_progress(percent: int, step: str = "", active: bool = True):
     """Actualiza el porcentaje real de la operación en curso."""
     _TASK_PROGRESS["percent"] = max(0, min(100, int(percent)))
@@ -200,7 +228,7 @@ def get_task_progress() -> Dict[str, Any]:
     """Devuelve el progreso real de la tarea actual."""
     return dict(_TASK_PROGRESS)
 
-def scan_junk(force_refresh: bool = False) -> Dict[str, Any]:
+def scan_junk(force_refresh: bool = False, track_progress: bool = True) -> Dict[str, Any]:
     """Escanea todas las categorías y devuelve el resumen sin borrar nada."""
     import time
     now = time.time()
@@ -212,11 +240,13 @@ def scan_junk(force_refresh: bool = False) -> Dict[str, Any]:
     grand_total_bytes = 0
     grand_total_files = 0
     total_cats = max(1, len(categories))
-    set_task_progress(5, "Iniciando análisis de categorías...", True)
+    if track_progress:
+        set_task_progress(5, "Iniciando análisis de categorías...", True)
 
     for idx, cat in enumerate(categories):
-        pct = int(5 + ((idx + 1) / total_cats) * 92)
-        set_task_progress(pct, f"Analizando {cat['name']}...", True)
+        if track_progress:
+            pct = int(5 + ((idx + 1) / total_cats) * 92)
+            set_task_progress(pct, f"Analizando {cat['name']}...", True)
 
         if cat.get("is_recycle_bin"):
             rb = get_recycle_bin_info()
@@ -255,7 +285,8 @@ def scan_junk(force_refresh: bool = False) -> Dict[str, Any]:
     }
     _JUNK_SCAN_CACHE["timestamp"] = time.time()
     _JUNK_SCAN_CACHE["data"] = res_data
-    set_task_progress(100, "Análisis completado", False)
+    if track_progress:
+        set_task_progress(100, "Análisis completado", False)
     return res_data
 
 def clean_directory_contents(

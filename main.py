@@ -314,10 +314,11 @@ if __name__ == "__main__":
         os.environ["WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"] = (
             "--disable-features=RendererCodeIntegrity,ElasticOverscroll --disable-gpu-sandbox"
         )
+        cache_name = "WebView2Cache_Admin" if is_admin() else "WebView2Cache"
         wv_storage = os.path.join(
             os.environ.get("LOCALAPPDATA", os.environ.get("TEMP", ".")),
             "NosClean",
-            "WebView2Cache"
+            cache_name
         )
         os.makedirs(wv_storage, exist_ok=True)
 

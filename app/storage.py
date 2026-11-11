@@ -2,6 +2,7 @@ import os
 import time
 from typing import List, Dict, Any, Optional
 from app.utils import format_size
+from app.cleaner import set_task_progress, reset_task_progress
 
 user_home = os.path.expanduser("~")
 
@@ -25,7 +26,11 @@ def scan_heavy_files(
     Busca archivos pesados (> min_size_mb) de forma optimizada y veloz.
     Omite carpetas de sistema y cachés internas gigantes para responder en pocos segundos.
     """
+    reset_task_progress()
+    set_task_progress(5, f"Iniciando escaneo en {os.path.basename(target_path) or target_path}...", True)
+
     if not os.path.exists(target_path):
+        reset_task_progress()
         return {
             "error": "La ruta especificada no existe en el equipo",
             "files": [],
@@ -37,39 +42,48 @@ def scan_heavy_files(
     min_size_bytes = min_size_mb * 1024 * 1024
     heavy_files = []
     
-    # Exclusiones automáticas para acelerar el escaneo en 10x
+    # Exclusiones automáticas por nombre de carpeta
     norm_target = os.path.normpath(target_path).lower()
     default_excluded = {
         '$recycle.bin', 'system volume information', 'recovery',
-        'windows\\winsxs', 'windows\\servicing', 'node_modules', '.git', '.cache'
+        'winsxs', 'servicing', 'system32', 'syswow64', 'node_modules',
+        '.git', '.cache', 'package cache', 'config.msi', '.gemini', '.vscode'
     }
 
-    # Si se escanea todo el perfil de usuario (C:\Users\X), excluir AppData para no demorar 40s
+    # Si se escanea todo el perfil de usuario (C:\Users\X), excluir AppData para no demorar
     if norm_target == user_home.lower():
-        default_excluded.add('appdata')
-        default_excluded.add('application data')
-        default_excluded.add('local settings')
+        default_excluded.update(['appdata', 'application data', 'local settings'])
 
-    # Si se escanea todo el disco C:\, excluir Windows y AppData por velocidad
+    # Si se escanea todo el disco C:\, excluir carpetas del sistema pesadas y de dependencias
     if norm_target in ['c:\\', 'c:']:
-        default_excluded.add('windows')
-        default_excluded.add('appdata')
+        default_excluded.update([
+            'windows', 'appdata', 'application data', 'local settings',
+            'program files', 'program files (x86)'
+        ])
 
     if excluded_dirs:
         default_excluded.update([d.lower() for d in excluded_dirs])
 
     start_time = time.time()
     scanned_count = 0
+    last_ui_update = 0
 
     try:
         for root, dirs, files in os.walk(target_path, topdown=True, followlinks=False):
-            # Filtrar carpetas excluidas de raíz
+            # Filtrar carpetas excluidas
             dirs[:] = [
                 d for d in dirs 
                 if d.lower() not in default_excluded 
                 and not d.startswith('$')
                 and not d.startswith('.')
             ]
+
+            now = time.time()
+            if now - last_ui_update > 0.25:
+                rel_folder = os.path.basename(root) or root
+                sim_pct = min(95, 10 + int(scanned_count / 150))
+                set_task_progress(sim_pct, f"Explorando {rel_folder}...", True)
+                last_ui_update = now
 
             for f in files:
                 scanned_count += 1
@@ -99,6 +113,8 @@ def scan_heavy_files(
     # Ordenar por tamaño de mayor a menor
     heavy_files.sort(key=lambda x: x["size_bytes"], reverse=True)
     total_found_size = sum(x["size_bytes"] for x in heavy_files)
+
+    set_task_progress(100, "¡Búsqueda de archivos pesados finalizada!", False)
 
     return {
         "target_path": target_path,
