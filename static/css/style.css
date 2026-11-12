@@ -592,3 +592,179 @@ input:focus {
     animation: nosclean-ring-spin 9s linear infinite;
     transform-origin: center center;
 }
+
+/* Mini Widget Compact Mode (Estilo Microsoft PC Manager) */
+body.mini-mode-active {
+    background: #102D25 !important;
+    overflow: hidden !important;
+    user-select: none;
+}
+
+#mini-widget-container {
+    background: linear-gradient(145deg, #102D25 0%, #081B15 100%);
+}
+
+@keyframes nosclean-bounce-subtle {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+
+.animate-bounce-subtle {
+    animation: nosclean-bounce-subtle 2.5s ease-in-out infinite;
+}
+
+/* Animaciones de Toast Corporativo Suave */
+@keyframes nosclean-toast-enter {
+    0% {
+        opacity: 0;
+        transform: translateY(22px) scale(0.92);
+    }
+    65% {
+        opacity: 1;
+        transform: translateY(-4px) scale(1.02);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes nosclean-toast-leave {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(16px) scale(0.94);
+    }
+}
+
+.toast-animated-enter {
+    animation: nosclean-toast-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.toast-animated-leave {
+    animation: nosclean-toast-leave 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Animación de Toast Flotante en Modo Widget */
+@keyframes nosclean-mini-toast-enter {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -18px) scale(0.85);
+    }
+    65% {
+        opacity: 1;
+        transform: translate(-50%, 3px) scale(1.03);
+    }
+    100% {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1);
+    }
+}
+
+@keyframes nosclean-mini-toast-exit {
+    0% {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -18px) scale(0.85);
+    }
+}
+
+.mini-toast-animated-enter {
+    animation: nosclean-mini-toast-enter 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.mini-toast-animated-exit {
+    animation: nosclean-mini-toast-exit 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ==================== MINI COHETE DE CARGA EN MODO WIDGET ==================== */
+body.mini-mode-active #rocket-loader-modal.hidden {
+    display: none !important;
+}
+
+body.mini-mode-active #rocket-loader-modal:not(.hidden) {
+    position: fixed !important;
+    inset: 0 !important;
+    padding: 16px !important;
+    background: rgba(10, 35, 27, 0.75) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 9999 !important;
+}
+
+body.mini-mode-active #rocket-loader-modal .glass-panel {
+    width: 290px !important;
+    max-width: 85% !important;
+    padding: 12px 18px !important;
+    border-radius: 20px !important;
+    background: #FFFFFF !important;
+    border: 1.5px solid rgba(22, 184, 78, 0.35) !important;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45) !important;
+    margin: auto !important;
+    text-align: center !important;
+    overflow: hidden !important;
+}
+
+body.mini-mode-active #rocket-loader-modal .relative.w-32.h-32 {
+    width: 52px !important;
+    height: 52px !important;
+    margin: 0 auto 4px auto !important;
+    border-width: 2.5px !important;
+}
+
+body.mini-mode-active #rocket-loader-modal svg.rocket-orbit-ring {
+    width: 44px !important;
+    height: 44px !important;
+}
+
+body.mini-mode-active #rocket-loader-modal #rocket-svg-actor {
+    width: 36px !important;
+    height: 36px !important;
+}
+
+body.mini-mode-active #rocket-loader-modal #rocket-percent-text {
+    font-size: 1.5rem !important;
+    line-height: 1 !important;
+    margin-top: 2px !important;
+    color: #087A45 !important;
+    font-weight: 900 !important;
+}
+
+body.mini-mode-active #rocket-loader-modal #rocket-title {
+    font-size: 0.85rem !important;
+    line-height: 1.2 !important;
+    margin-top: 2px !important;
+    color: #102D25 !important;
+    font-weight: 900 !important;
+}
+
+body.mini-mode-active #rocket-loader-modal #rocket-step-text {
+    font-size: 0.68rem !important;
+    line-height: 1.2 !important;
+    color: #64748B !important;
+    min-height: 14px !important;
+    margin-top: 2px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+body.mini-mode-active #rocket-loader-modal .w-full.h-3\.5 {
+    height: 6px !important;
+    margin-top: 6px !important;
+    border-radius: 999px !important;
+    padding: 0 !important;
+}
+
+body.mini-mode-active #rocket-loader-modal #rocket-result-box {
+    display: none !important;
+}

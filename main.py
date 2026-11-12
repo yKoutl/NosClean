@@ -70,6 +70,18 @@ def read_root():
     return {"message": "El dashboard frontend está cargando."}
 
 # ================== CONFIGURACIÓN PERSISTENTE ==================
+_main_window = None
+
+DEFAULT_CONFIG = {
+    "welcome_dismissed": False,
+    "admin_prompt_dismissed": False,
+    "mini_mode": False,
+    "notify_high_ram": True,
+    "high_ram_threshold": 80,
+    "notify_optimization": True,
+    "always_on_top_mini": True
+}
+
 def _get_config_path() -> str:
     folder = os.path.join(os.environ.get("LOCALAPPDATA", os.environ.get("TEMP", ".")), "NosClean")
     os.makedirs(folder, exist_ok=True)
@@ -77,13 +89,16 @@ def _get_config_path() -> str:
 
 def load_app_config():
     p = _get_config_path()
+    cfg = dict(DEFAULT_CONFIG)
     if os.path.exists(p):
         try:
             with open(p, "r", encoding="utf-8") as f:
-                return json.load(f)
+                data = json.load(f)
+                if isinstance(data, dict):
+                    cfg.update(data)
         except Exception:
             pass
-    return {"welcome_dismissed": False, "admin_prompt_dismissed": False}
+    return cfg
 
 def save_app_config(cfg):
     p = _get_config_path()
@@ -100,6 +115,11 @@ def api_get_config():
 class ConfigUpdateRequest(BaseModel):
     welcome_dismissed: Optional[bool] = None
     admin_prompt_dismissed: Optional[bool] = None
+    mini_mode: Optional[bool] = None
+    notify_high_ram: Optional[bool] = None
+    high_ram_threshold: Optional[int] = None
+    notify_optimization: Optional[bool] = None
+    always_on_top_mini: Optional[bool] = None
 
 @app.post("/api/system/config")
 def api_update_config(req: ConfigUpdateRequest):
@@ -108,8 +128,171 @@ def api_update_config(req: ConfigUpdateRequest):
         cfg["welcome_dismissed"] = req.welcome_dismissed
     if req.admin_prompt_dismissed is not None:
         cfg["admin_prompt_dismissed"] = req.admin_prompt_dismissed
+    if req.mini_mode is not None:
+        cfg["mini_mode"] = req.mini_mode
+    if req.notify_high_ram is not None:
+        cfg["notify_high_ram"] = req.notify_high_ram
+    if req.high_ram_threshold is not None:
+        cfg["high_ram_threshold"] = req.high_ram_threshold
+    if req.notify_optimization is not None:
+        cfg["notify_optimization"] = req.notify_optimization
+    if req.always_on_top_mini is not None:
+        cfg["always_on_top_mini"] = req.always_on_top_mini
     save_app_config(cfg)
     return {"success": True, "config": cfg}
+
+def get_nosclean_hwnd():
+    """Obtiene el HWND real de la ventana de NosClean con múltiples métodos a prueba de fallos."""
+    try:
+        import ctypes, os
+        from ctypes import wintypes
+        u32 = ctypes.windll.user32
+
+        # 1. Directo desde la instancia de BrowserView de pywebview (WinForms)
+        try:
+            import webview.platforms.winforms as wf
+            global _main_window
+            if _main_window and hasattr(_main_window, 'uid'):
+                form = wf.BrowserView.instances.get(_main_window.uid)
+                if form and hasattr(form, 'Handle'):
+                    h = int(form.Handle)
+                    if h and u32.IsWindow(h):
+                        return h
+        except Exception:
+            pass
+
+        # 2. Enumerar ventanas pertenecientes al PID actual
+        current_pid = os.getpid()
+        found_hwnds = []
+        WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, wintypes.HWND, wintypes.LPARAM)
+        def enum_cb(h, _):
+            lp_pid = wintypes.DWORD()
+            u32.GetWindowThreadProcessId(h, ctypes.byref(lp_pid))
+            if lp_pid.value == current_pid and u32.IsWindowVisible(h):
+                if u32.GetWindowTextLengthW(h) > 0:
+                    found_hwnds.append(h)
+            return True
+        u32.EnumWindows(WNDENUMPROC(enum_cb), 0)
+        if found_hwnds:
+            return found_hwnds[0]
+
+        # 3. Fallback por títulos conocidos
+        for cand in ['NosClean (Administrador)', 'NosClean', 'NosClean ', 'NosClean (Administrador) ']:
+            h = u32.FindWindowW(None, cand)
+            if h:
+                return h
+    except Exception:
+        pass
+    return None
+
+def set_mini_window_style(is_mini: bool):
+    """Aplica restricciones Win32 y posiciona con precisión en la esquina inferior derecha sobre la barra de tareas."""
+    try:
+        import ctypes
+        from ctypes import wintypes
+        u32 = ctypes.windll.user32
+        hwnd = get_nosclean_hwnd()
+        if not hwnd:
+            return
+
+        GWL_STYLE = -16
+        WS_MAXIMIZEBOX = 0x00010000
+        WS_THICKFRAME = 0x00040000
+        SWP_FRAMECHANGED = 0x0020
+        SWP_SHOWWINDOW = 0x0040
+
+        style = u32.GetWindowLongW(hwnd, GWL_STYLE)
+        hMenu = u32.GetSystemMenu(hwnd, False)
+
+        rect = wintypes.RECT()
+        u32.SystemParametersInfoW(0x0030, 0, ctypes.byref(rect), 0)  # SPI_GETWORKAREA (área libre de barra de tareas)
+
+        if is_mini:
+            # 1. Quitar botón de maximizar y borde manual
+            style = style & ~WS_MAXIMIZEBOX & ~WS_THICKFRAME
+            u32.SetWindowLongW(hwnd, GWL_STYLE, style)
+
+            # 2. Bloquear arrastre de título (SC_MOVE) para que quede fija
+            if hMenu:
+                u32.DeleteMenu(hMenu, 0xF010, 0x0000)  # SC_MOVE
+                u32.DeleteMenu(hMenu, 0xF030, 0x0000)  # SC_MAXIMIZE
+                u32.DeleteMenu(hMenu, 0xF000, 0x0000)  # SC_SIZE
+                u32.DrawMenuBar(hwnd)
+
+            # 3. Detectar escala DPI real de Windows para evitar ventanas enanas en pantallas 1080p/4K
+            scale = 1.0
+            try:
+                if hasattr(u32, "GetDpiForWindow"):
+                    dpi = u32.GetDpiForWindow(hwnd)
+                    if dpi and dpi > 0:
+                        scale = dpi / 96.0
+                elif hasattr(u32, "GetDpiForSystem"):
+                    dpi = u32.GetDpiForSystem()
+                    if dpi and dpi > 0:
+                        scale = dpi / 96.0
+            except Exception:
+                scale = 1.0
+            scale = max(1.0, scale)
+
+            # Dimensiones holgadas para el widget: 500x300 lógicos escalados
+            mini_w = int(500 * scale)
+            mini_h = int(300 * scale)
+            margin = int(24 * scale)
+
+            pos_x = max(0, rect.right - mini_w - margin)
+            pos_y = max(0, rect.bottom - mini_h - margin)
+
+            u32.SetWindowPos(hwnd, 0, pos_x, pos_y, mini_w, mini_h, SWP_FRAMECHANGED | SWP_SHOWWINDOW)
+            u32.ShowWindow(hwnd, 5)  # SW_SHOW (Visibilidad garantizada)
+        else:
+            # Restaurar maximizar, redimensionar y mover
+            style = style | WS_MAXIMIZEBOX | WS_THICKFRAME
+            u32.SetWindowLongW(hwnd, GWL_STYLE, style)
+
+            u32.GetSystemMenu(hwnd, True)
+            u32.DrawMenuBar(hwnd)
+
+            # Restaurar a Pantalla Completa / Maximizado
+            u32.ShowWindow(hwnd, 3)  # SW_MAXIMIZE
+    except Exception:
+        pass
+
+class WindowModeRequest(BaseModel):
+    mode: str  # "mini" or "normal"
+    always_on_top: Optional[bool] = None
+
+@app.post("/api/system/window-mode")
+def api_set_window_mode(req: WindowModeRequest):
+    global _main_window
+    cfg = load_app_config()
+    target_mode = req.mode.lower()
+    is_mini = (target_mode == "mini")
+    always_on_top = req.always_on_top if req.always_on_top is not None else cfg.get("always_on_top_mini", True)
+
+    if _main_window:
+        try:
+            if is_mini:
+                _main_window.restore()  # Des-maximiza de forma limpia antes de encoger
+                _main_window.on_top = bool(always_on_top)
+                set_mini_window_style(True)
+            else:
+                set_mini_window_style(False)
+                _main_window.on_top = False
+                _main_window.maximize()
+        except Exception:
+            pass
+
+    cfg["mini_mode"] = is_mini
+    if req.always_on_top is not None:
+        cfg["always_on_top_mini"] = bool(req.always_on_top)
+    save_app_config(cfg)
+    return {"success": True, "mode": target_mode, "config": cfg}
+
+    cfg["mini_mode"] = is_mini
+    if req.always_on_top is not None:
+        cfg["always_on_top_mini"] = bool(req.always_on_top)
+    save_app_config(cfg)
+    return {"success": True, "mode": target_mode, "config": cfg}
 
 # ================== ASESOR Y CONSEJOS ==================
 @app.get("/api/advisor/recommendations")
@@ -373,12 +556,13 @@ if __name__ == "__main__":
 
         import webview
         window_title = 'NosClean (Administrador)' if is_admin() else 'NosClean'
-        window = webview.create_window(
+        _main_window = webview.create_window(
             title=window_title,
             url=f'http://127.0.0.1:{app_port}',
             width=1280,
             height=820,
-            min_size=(960, 640)
+            min_size=(320, 140),
+            maximized=True
         )
         webview.start(
             icon=ico_path if os.path.exists(ico_path) else None,

@@ -10,6 +10,17 @@ let sidebarCollapsed = false;
 let isAdminMode = false;
 let adminStatusChecked = false;
 let heavyScannedOnce = false;
+let appConfig = {
+    welcome_dismissed: false,
+    admin_prompt_dismissed: false,
+    mini_mode: false,
+    notify_high_ram: true,
+    high_ram_threshold: 80,
+    notify_optimization: true,
+    always_on_top_mini: true
+};
+let isMiniModeActive = false;
+let lastHighRamAlertTime = 0;
 
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', () => {
@@ -24,10 +35,19 @@ async function initApp() {
         console.warn("Aviso al cargar rutas:", e);
     }
     try {
-        loadOverview();
+        const cfg = await apiGet('/api/system/config');
+        if (cfg) {
+            appConfig = Object.assign(appConfig, cfg);
+        }
+    } catch (e) {
+        console.warn("Aviso al cargar config:", e);
+    }
+    try {
+        await loadOverview();
     } catch (e) {
         console.warn("Aviso al iniciar modulos:", e);
     }
+
     // Auto-refresh metrics every 5 seconds so numbers on screen are always real-time
     setInterval(updateQuickMetrics, 5000);
 
@@ -108,7 +128,7 @@ function switchTab(tabId) {
     currentTab = tabId;
     
     // Hide all tabs
-    ['advisor', 'overview', 'cleaner', 'heavy', 'apps', 'organizer', 'startup', 'guide', 'about'].forEach(id => {
+    ['advisor', 'overview', 'cleaner', 'heavy', 'apps', 'organizer', 'startup', 'guide', 'about', 'settings'].forEach(id => {
         const sec = document.getElementById(`tab-${id}`);
         const btn = document.getElementById(`tab-btn-${id}`);
         if (sec) sec.classList.add('hidden');
@@ -148,6 +168,8 @@ function switchTab(tabId) {
         scanOrganizer();
     } else if (tabId === 'startup') {
         loadStartupAndProcs();
+    } else if (tabId === 'settings') {
+        loadSettingsUI();
     }
 
     lucide.createIcons();
@@ -362,6 +384,10 @@ async function loadOverview(force = false) {
     document.getElementById('ram-free').textContent = `Disponible: ${data.ram.free_formatted}`;
     document.getElementById('ram-bar').style.width = `${data.ram.percent_used}%`;
 
+    // Sincronizar Widget Compacto y Alerta de RAM
+    updateMiniWidgetUI(data);
+    checkHighRamAlert(data.ram.percent_used);
+
     // GPU Card
     if (data.gpus && data.gpus.length > 0) {
         const gpu = data.gpus[0];
@@ -445,6 +471,10 @@ async function updateQuickMetrics() {
     document.getElementById('ram-used').textContent = data.ram.used_formatted;
     document.getElementById('ram-free').textContent = `Disponible: ${data.ram.free_formatted}`;
     document.getElementById('ram-bar').style.width = `${data.ram.percent_used}%`;
+
+    // Sincronizar Widget Compacto y Alerta de RAM
+    updateMiniWidgetUI(data);
+    checkHighRamAlert(data.ram.percent_used);
 }
 
 // ======================== TAB 2: JUNK CLEANER ========================
@@ -1230,6 +1260,7 @@ function showWelcomeModal() {
     const modal = document.getElementById('welcome-modal');
     if (modal) {
         modal.classList.remove('hidden');
+        modal.style.display = '';
         lucide.createIcons();
     }
 }
@@ -1245,20 +1276,9 @@ function closeWelcomeModal() {
 }
 
 function checkAdminStartupPrompt() {
-    const adminDismissed = localStorage.getItem('nosclean_admin_prompt_dismissed');
-    if (adminDismissed === 'true') return;
-
-    const tryShow = () => {
-        if (!isAdminMode) {
-            openAdminModal();
-        }
-    };
-
-    if (adminStatusChecked) {
-        setTimeout(tryShow, 250);
-    } else {
-        setTimeout(tryShow, 700);
-    }
+    // Nunca interrumpir al usuario con un modal invasivo en el arranque.
+    // El estado de Administrador se visualiza claramente en el botón de la barra superior.
+    return;
 }
 
 function openAdminModal() {
@@ -1350,6 +1370,7 @@ function openQrModal() {
     const modal = document.getElementById('qr-modal');
     if (modal) {
         modal.classList.remove('hidden');
+        modal.style.display = '';
         lucide.createIcons();
     }
 }
@@ -1392,6 +1413,7 @@ function openTaskbarModal() {
     const modal = document.getElementById('pin-taskbar-modal');
     if (modal) {
         modal.classList.remove('hidden');
+        modal.style.display = '';
         lucide.createIcons();
     }
 }
@@ -1430,9 +1452,16 @@ document.addEventListener('keydown', (e) => {
 });
 
 function showToast(message, type = 'info') {
+    // Si estamos en Modo Widget compacto, mostrar la animación en píldora esmeralda sin bloquear el widget
+    if (isMiniModeActive) {
+        showMiniToastBadge(message);
+        return;
+    }
+
     const container = document.getElementById('toast-container');
+    if (!container) return;
     const toast = document.createElement('div');
-    
+
     const colors = {
         success: 'border-[#16B84E] bg-white text-[#087A45] shadow-lg shadow-[#087A45]/10',
         error: 'border-rose-300 bg-white text-rose-700 shadow-lg shadow-rose-500/10',
@@ -1447,7 +1476,7 @@ function showToast(message, type = 'info') {
         info: 'info'
     };
 
-    toast.className = `flex items-center space-x-2.5 px-4 py-3 rounded-xl border shadow-2xl backdrop-blur-md text-xs font-medium pointer-events-auto transition-all transform duration-300 ${colors[type] || colors.info}`;
+    toast.className = `flex items-center space-x-2.5 px-4 py-3 rounded-xl border shadow-2xl backdrop-blur-md text-xs font-semibold pointer-events-auto toast-animated-enter ${colors[type] || colors.info}`;
     toast.innerHTML = `
         <i data-lucide="${icons[type] || 'info'}" class="w-4 h-4 flex-shrink-0"></i>
         <span>${message}</span>
@@ -1457,9 +1486,12 @@ function showToast(message, type = 'info') {
     lucide.createIcons();
 
     setTimeout(() => {
-        toast.classList.add('opacity-0', 'scale-95');
-        setTimeout(() => toast.remove(), 300);
-    }, 4000);
+        toast.classList.remove('toast-animated-enter');
+        toast.classList.add('toast-animated-leave');
+        setTimeout(() => {
+            if (toast.parentNode) toast.parentNode.removeChild(toast);
+        }, 300);
+    }, 3800);
 }
 
 // ======================== PANTALLA DE CARGA COHETE CON PORCENTAJE DINÁMICO REAL ========================
@@ -1512,6 +1544,7 @@ function startRocketLoader({ title = 'Optimizando tu PC', steps = [] } = {}) {
 
     if (modal) {
         modal.classList.remove('hidden');
+        modal.style.display = '';
         lucide.createIcons();
     }
 
@@ -1620,6 +1653,7 @@ function hideRocketLoader() {
     const modal = document.getElementById('rocket-loader-modal');
     if (modal) {
         modal.classList.add('hidden');
+        modal.style.display = 'none';
     }
     const resultBox = document.getElementById('rocket-result-box');
     if (resultBox) {
@@ -1683,7 +1717,9 @@ async function quickOptimizePC() {
                 holdMs: 1650
             });
 
-            showToast(`Optimización completada: RAM bajó de ${beforeRam} a ${afterRam} (-${ramText}).`, 'success');
+            if (appConfig.notify_optimization) {
+                showToast(`Optimización completada: RAM bajó de ${beforeRam} a ${afterRam} (-${ramText}).`, 'success');
+            }
         } else {
             hideRocketLoader();
             showToast('Ocurrió un error al optimizar el equipo.', 'error');
@@ -1727,4 +1763,234 @@ function shutdownApp() {
             lucide.createIcons();
         }
     );
+}
+
+// ======================== MODO WIDGET COMPACTO (ESTILO PC MANAGER) ========================
+async function toggleMiniMode(enable, notifyBackend = true) {
+    isMiniModeActive = Boolean(enable);
+    const fullApp = document.getElementById('full-app-container');
+    const miniWidget = document.getElementById('mini-widget-container');
+
+    if (enable) {
+        hideRocketLoader();
+        if (fullApp) fullApp.classList.add('hidden');
+        if (miniWidget) miniWidget.classList.remove('hidden');
+        document.body.classList.add('mini-mode-active');
+        if (systemOverviewData) {
+            updateMiniWidgetUI(systemOverviewData);
+        }
+        if (notifyBackend) {
+            await apiPost('/api/system/window-mode', {
+                mode: 'mini',
+                always_on_top: Boolean(appConfig.always_on_top_mini)
+            });
+        }
+    } else {
+        if (miniWidget) miniWidget.classList.add('hidden');
+        if (fullApp) fullApp.classList.remove('hidden');
+        document.body.classList.remove('mini-mode-active');
+        if (notifyBackend) {
+            await apiPost('/api/system/window-mode', {
+                mode: 'normal'
+            });
+        }
+    }
+    lucide.createIcons();
+}
+
+async function toggleWidgetAlwaysOnTop() {
+    appConfig.always_on_top_mini = !appConfig.always_on_top_mini;
+    const btn = document.getElementById('btn-mini-pin');
+    if (btn) {
+        if (appConfig.always_on_top_mini) {
+            btn.className = "p-1.5 rounded-lg text-emerald-400 bg-emerald-500/20 transition-colors cursor-pointer";
+        } else {
+            btn.className = "p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer";
+        }
+    }
+    await apiPost('/api/system/window-mode', {
+        mode: 'mini',
+        always_on_top: Boolean(appConfig.always_on_top_mini)
+    });
+    showToast(appConfig.always_on_top_mini ? 'Widget fijado siempre visible (Always on top)' : 'Fijación de widget desactivada', 'info');
+}
+
+function updateMiniWidgetUI(data) {
+    if (!data || !data.ram) return;
+    const ramVal = document.getElementById('mini-ram-val');
+    const ramText = document.getElementById('mini-ram-text');
+    const cpuText = document.getElementById('mini-cpu-text');
+    const adminBadge = document.getElementById('mini-admin-badge');
+    const ramCircle = document.getElementById('mini-ram-circle');
+    const statusText = document.getElementById('mini-status-text');
+
+    if (ramVal) ramVal.textContent = `${data.ram.percent_used}%`;
+    if (ramText) ramText.textContent = `${data.ram.used_formatted} / ${data.ram.total_formatted}`;
+    if (cpuText) cpuText.textContent = `CPU: ${data.cpu ? data.cpu.usage_percent : 0}%`;
+
+    const isAdmin = Boolean(data.is_admin || (data.os && data.os.is_admin));
+    if (adminBadge) {
+        adminBadge.classList.toggle('hidden', !isAdmin);
+    }
+
+    if (ramCircle) {
+        if (data.ram.percent_used >= 85) {
+            ramCircle.className = "w-16 h-16 rounded-full border-4 border-rose-500 flex items-center justify-center bg-rose-950/40 animate-pulse";
+            if (ramVal) ramVal.className = "text-base font-black text-rose-400";
+            if (statusText) statusText.textContent = "⚠️ Memoria RAM alta: optimiza";
+        } else if (data.ram.percent_used >= 75) {
+            ramCircle.className = "w-16 h-16 rounded-full border-4 border-amber-500 flex items-center justify-center bg-amber-950/40";
+            if (ramVal) ramVal.className = "text-base font-black text-amber-400";
+            if (statusText) statusText.textContent = "Uso moderado de memoria";
+        } else {
+            ramCircle.className = "w-16 h-16 rounded-full border-4 border-emerald-500/40 flex items-center justify-center bg-black/25";
+            if (ramVal) ramVal.className = "text-base font-black text-emerald-400";
+            if (statusText) statusText.textContent = "PC en óptimo rendimiento";
+        }
+    }
+}
+
+let miniToastTimer = null;
+function showMiniToastBadge(message) {
+    const badge = document.getElementById('mini-toast-badge');
+    const badgeText = document.getElementById('mini-toast-badge-text');
+    if (!badge || !badgeText) return;
+
+    let cleanMsg = message.trim();
+    if (!cleanMsg.toLowerCase().includes('liberado') && !cleanMsg.toLowerCase().includes('optimizado')) {
+        cleanMsg = `¡${cleanMsg} de RAM liberados!`;
+    }
+
+    badgeText.textContent = cleanMsg;
+    badge.classList.remove('hidden', 'mini-toast-animated-exit');
+    badge.classList.add('mini-toast-animated-enter');
+    lucide.createIcons();
+
+    if (miniToastTimer) clearTimeout(miniToastTimer);
+    miniToastTimer = setTimeout(() => {
+        badge.classList.remove('mini-toast-animated-enter');
+        badge.classList.add('mini-toast-animated-exit');
+        setTimeout(() => {
+            badge.classList.add('hidden');
+            badge.classList.remove('mini-toast-animated-exit');
+        }, 280);
+    }, 2500);
+}
+
+async function miniOptimize() {
+    const btn = document.getElementById('mini-btn-optimize');
+    const label = document.getElementById('mini-opt-label');
+    const icon = document.getElementById('mini-opt-icon');
+    const freedSpan = document.getElementById('mini-last-freed');
+    const statusText = document.getElementById('mini-status-text');
+
+    if (btn) btn.disabled = true;
+    if (label) label.textContent = 'Optimizando...';
+    if (icon) icon.classList.add('animate-spin');
+
+    // Lanzar el Cohete Adaptado para el Widget
+    startRocketLoader({
+        title: 'Impulsando tu PC',
+        steps: [
+            { at: 0, text: 'Analizando memoria RAM...' },
+            { at: 35, text: 'Vaciando bloques de RAM inactiva...' },
+            { at: 68, text: 'Vaciando caché DNS de Windows...' },
+            { at: 86, text: 'Depurando temporales rápidos...' }
+        ]
+    });
+
+    try {
+        const res = await fetch('/api/system/optimize', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            lastOptimizeTimestamp = Date.now();
+            const ramText = data.ram_freed_formatted || '0 B';
+            const beforeRam = data.before_ram_used_formatted || `${data.before_ram_used_gb} GB`;
+            const afterRam = data.new_ram_used_formatted || `${data.new_ram_used_gb} GB`;
+
+            await finishRocketLoader({
+                stepText: '¡Optimización completada!',
+                resultTitle: `¡${ramText} liberados!`,
+                resultDetail: `RAM bajó de ${beforeRam} a ${afterRam}.`,
+                holdMs: 1300
+            });
+
+            await loadOverview(true);
+            if (freedSpan) {
+                freedSpan.textContent = `-${ramText}`;
+                setTimeout(() => { if (freedSpan) freedSpan.textContent = ''; }, 6000);
+            }
+            if (statusText) {
+                statusText.innerHTML = `<span class="text-emerald-300 font-black">✨ ¡Optimizado! -${ramText}</span>`;
+            }
+        } else {
+            hideRocketLoader();
+            showToast('No se pudo completar la optimización', 'error');
+        }
+    } catch (e) {
+        hideRocketLoader();
+        console.error("Error en miniOptimize:", e);
+    } finally {
+        if (btn) btn.disabled = false;
+        if (label) label.textContent = 'Optimizar';
+        if (icon) icon.classList.remove('animate-spin');
+        lucide.createIcons();
+    }
+}
+
+// ======================== ALERTAS PROACTIVAS DE ALTO CONSUMO ========================
+function checkHighRamAlert(ramPercent) {
+    if (!appConfig.notify_high_ram) return;
+    const threshold = appConfig.high_ram_threshold || 80;
+    const now = Date.now();
+    // Cooldown de 4 minutos entre alertas para evitar molestias
+    if (ramPercent >= threshold && (now - lastHighRamAlertTime > 4 * 60 * 1000)) {
+        lastHighRamAlertTime = now;
+        showHighRamAlert(ramPercent);
+    }
+}
+
+function showHighRamAlert(ramPercent) {
+    const banner = document.getElementById('high-ram-banner');
+    const valEl = document.getElementById('high-ram-banner-val');
+    if (valEl) valEl.textContent = `${ramPercent}%`;
+    if (banner) {
+        banner.classList.remove('hidden');
+        lucide.createIcons();
+    }
+}
+
+function dismissHighRamAlert() {
+    const banner = document.getElementById('high-ram-banner');
+    if (banner) banner.classList.add('hidden');
+}
+
+async function optimizeFromHighRamAlert() {
+    dismissHighRamAlert();
+    await quickOptimizePC();
+}
+
+// ======================== PESTAÑA CONFIGURACIÓN ========================
+function loadSettingsUI() {
+    const alwaysOnTopCb = document.getElementById('cfg-always-on-top');
+    const startMiniCb = document.getElementById('cfg-start-mini');
+    const notifyHighRamCb = document.getElementById('cfg-notify-high-ram');
+    const thresholdSelect = document.getElementById('cfg-ram-threshold');
+    const notifyOptCb = document.getElementById('cfg-notify-optimization');
+
+    if (alwaysOnTopCb) alwaysOnTopCb.checked = Boolean(appConfig.always_on_top_mini);
+    if (startMiniCb) startMiniCb.checked = Boolean(appConfig.mini_mode);
+    if (notifyHighRamCb) notifyHighRamCb.checked = Boolean(appConfig.notify_high_ram);
+    if (thresholdSelect) thresholdSelect.value = String(appConfig.high_ram_threshold || 80);
+    if (notifyOptCb) notifyOptCb.checked = Boolean(appConfig.notify_optimization);
+}
+
+async function updateConfigOption(key, value) {
+    appConfig[key] = value;
+    try {
+        await apiPost('/api/system/config', { [key]: value });
+        showToast('Preferencia guardada correctamente', 'success');
+    } catch (e) {
+        console.error("Error guardando config:", e);
+    }
 }
