@@ -161,7 +161,7 @@ def _is_protected_temp_entry(entry_name: str, entry_path: str) -> bool:
                 return True  # Está abierta por otro proceso activo: proteger
         return True
 
-def scan_directory_size(path: str, max_seconds: float = 1.2, max_files: int = 15000) -> (int, int):
+def scan_directory_size(path: str, max_seconds: float = 0.15, max_files: int = 3000) -> (int, int):
     """
     Calcula de forma iterativa y ultrarrápida el tamaño en bytes y cantidad de archivos.
     Incluye un presupuesto máximo de tiempo (max_seconds) y límite de archivos para que,
@@ -331,9 +331,12 @@ def clean_directory_contents(
                     size = entry.stat().st_size
                     try:
                         os.remove(entry.path)
-                    except PermissionError:
-                        os.chmod(entry.path, stat.S_IWRITE)
-                        os.remove(entry.path)
+                    except PermissionError as e:
+                        if getattr(e, 'winerror', None) == 5:
+                            os.chmod(entry.path, stat.S_IWRITE)
+                            os.remove(entry.path)
+                        else:
+                            raise
                     bytes_freed += size
                     files_deleted += 1
                 except (PermissionError, OSError):
@@ -348,9 +351,12 @@ def clean_directory_contents(
                             fsize = os.path.getsize(fpath)
                             try:
                                 os.remove(fpath)
-                            except PermissionError:
-                                os.chmod(fpath, stat.S_IWRITE)
-                                os.remove(fpath)
+                            except PermissionError as e:
+                                if getattr(e, 'winerror', None) == 5:
+                                    os.chmod(fpath, stat.S_IWRITE)
+                                    os.remove(fpath)
+                                else:
+                                    raise
                             bytes_freed += fsize
                             files_deleted += 1
                         except (PermissionError, OSError):
@@ -360,14 +366,23 @@ def clean_directory_contents(
                         try:
                             try:
                                 os.rmdir(dpath)
-                            except PermissionError:
-                                os.chmod(dpath, stat.S_IWRITE)
-                                os.rmdir(dpath)
+                            except PermissionError as e:
+                                if getattr(e, 'winerror', None) == 5:
+                                    os.chmod(dpath, stat.S_IWRITE)
+                                    os.rmdir(dpath)
+                                else:
+                                    raise
                         except (PermissionError, OSError):
                             pass
                 try:
                     try:
                         os.rmdir(entry.path)
+                    except PermissionError as e:
+                        if getattr(e, 'winerror', None) == 5:
+                            os.chmod(entry.path, stat.S_IWRITE)
+                            os.rmdir(entry.path)
+                        else:
+                            raise
                     except PermissionError:
                         os.chmod(entry.path, stat.S_IWRITE)
                         os.rmdir(entry.path)

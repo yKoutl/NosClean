@@ -1,5 +1,5 @@
 // State variables
-let currentTab = 'advisor';
+let currentTab = 'overview';
 let systemOverviewData = null;
 let junkData = null;
 let installedAppsData = [];
@@ -1205,12 +1205,22 @@ function updateAdminBadgeUI(isAdmin) {
     lucide.createIcons();
 }
 
-function checkWelcomeModal() {
-    const dismissed = localStorage.getItem('nosclean_welcome_dismissed');
+async function checkWelcomeModal() {
+    let dismissed = (localStorage.getItem('nosclean_welcome_dismissed') === 'true');
+    if (!dismissed) {
+        try {
+            const cfg = await apiGet('/api/system/config');
+            if (cfg && cfg.welcome_dismissed) {
+                dismissed = true;
+                localStorage.setItem('nosclean_welcome_dismissed', 'true');
+            }
+        } catch {}
+    }
+
     if (!dismissed) {
         setTimeout(() => {
             showWelcomeModal();
-        }, 300);
+        }, 150);
     } else {
         checkAdminStartupPrompt();
     }
@@ -1226,10 +1236,8 @@ function showWelcomeModal() {
 
 function closeWelcomeModal() {
     const modal = document.getElementById('welcome-modal');
-    const dontShow = document.getElementById('welcome-dont-show');
-    if (dontShow && dontShow.checked) {
-        localStorage.setItem('nosclean_welcome_dismissed', 'true');
-    }
+    localStorage.setItem('nosclean_welcome_dismissed', 'true');
+    apiPost('/api/system/config', { welcome_dismissed: true }).catch(() => {});
     if (modal) {
         modal.classList.add('hidden');
     }

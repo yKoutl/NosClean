@@ -7,12 +7,13 @@ if sys.stdout is None:
 if sys.stderr is None:
     sys.stderr = open(os.devnull, "w")
 
+import json
 import uvicorn
 from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 
 from app.auditor import get_system_overview, get_top_processes, kill_process_by_pid
 from app.cleaner import scan_junk, clean_selected_categories, quick_optimize, get_task_progress
@@ -67,6 +68,48 @@ def read_root():
             }
         )
     return {"message": "El dashboard frontend está cargando."}
+
+# ================== CONFIGURACIÓN PERSISTENTE ==================
+def _get_config_path() -> str:
+    folder = os.path.join(os.environ.get("LOCALAPPDATA", os.environ.get("TEMP", ".")), "NosClean")
+    os.makedirs(folder, exist_ok=True)
+    return os.path.join(folder, "nosclean_config.json")
+
+def load_app_config():
+    p = _get_config_path()
+    if os.path.exists(p):
+        try:
+            with open(p, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {"welcome_dismissed": False, "admin_prompt_dismissed": False}
+
+def save_app_config(cfg):
+    p = _get_config_path()
+    try:
+        with open(p, "w", encoding="utf-8") as f:
+            json.dump(cfg, f, indent=2)
+    except Exception:
+        pass
+
+@app.get("/api/system/config")
+def api_get_config():
+    return load_app_config()
+
+class ConfigUpdateRequest(BaseModel):
+    welcome_dismissed: Optional[bool] = None
+    admin_prompt_dismissed: Optional[bool] = None
+
+@app.post("/api/system/config")
+def api_update_config(req: ConfigUpdateRequest):
+    cfg = load_app_config()
+    if req.welcome_dismissed is not None:
+        cfg["welcome_dismissed"] = req.welcome_dismissed
+    if req.admin_prompt_dismissed is not None:
+        cfg["admin_prompt_dismissed"] = req.admin_prompt_dismissed
+    save_app_config(cfg)
+    return {"success": True, "config": cfg}
 
 # ================== ASESOR Y CONSEJOS ==================
 @app.get("/api/advisor/recommendations")

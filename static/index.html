@@ -155,14 +155,14 @@
         <nav class="space-y-1">
             <!-- 1. Consejos y Asesor -->
             <button onclick="switchTab('advisor')" id="tab-btn-advisor" title="Consejos y Asesor de Limpieza"
-                class="nav-tab active flex items-center space-x-3 w-full px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all">
+                class="nav-tab flex items-center space-x-3 w-full px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-[#087A45]/30 border border-transparent">
                 <i data-lucide="lightbulb" class="w-4 h-4 flex-shrink-0"></i>
                 <span class="nav-text truncate">Consejos y Asesor</span>
             </button>
 
             <!-- 2. Resumen Mi PC -->
             <button onclick="switchTab('overview')" id="tab-btn-overview" title="Resumen de Mi PC"
-                class="nav-tab flex items-center space-x-3 w-full px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all">
+                class="nav-tab active flex items-center space-x-3 w-full px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all text-white bg-[#087A45] border border-[#16B84E]/50 shadow-md">
                 <i data-lucide="cpu" class="w-4 h-4 flex-shrink-0"></i>
                 <span class="nav-text truncate">Resumen Mi PC</span>
             </button>
@@ -278,7 +278,7 @@
     <main id="main-content-scroll" class="mt-16">
 
         <!-- TAB: ADVISOR (CONSEJOS INTELIGENTES) -->
-        <section id="tab-advisor" class="space-y-5 max-w-7xl mx-auto">
+        <section id="tab-advisor" class="space-y-5 hidden max-w-7xl mx-auto">
             <!-- Health Score Banner (100% Responsivo, Sin Solapamientos) -->
             <div class="glass-panel rounded-2xl p-4 sm:p-6 border border-slate-200">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -400,7 +400,7 @@
         </section>
 
         <!-- TAB 1: OVERVIEW -->
-        <section id="tab-overview" class="space-y-5 hidden max-w-7xl mx-auto">
+        <section id="tab-overview" class="space-y-5 max-w-7xl mx-auto">
             <!-- Welcome & System Banner -->
             <div class="glass-panel rounded-2xl p-4 sm:p-6 border border-slate-200">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
