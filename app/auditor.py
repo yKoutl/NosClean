@@ -8,6 +8,24 @@ from app.utils import format_size, is_admin
 _CACHED_CPU_NAME = None
 _CACHED_GPUS = None
 _OVERVIEW_CACHE = {"timestamp": 0.0, "data": None}
+_STATIC_OS_INFO = None
+
+def get_static_os_info():
+    """Caché permanente para metadatos del SO que jamás cambian en ejecución."""
+    global _STATIC_OS_INFO
+    if _STATIC_OS_INFO is None:
+        boot_time = psutil.boot_time()
+        _STATIC_OS_INFO = {
+            "system": platform.system(),
+            "release": platform.release(),
+            "version": platform.version(),
+            "architecture": platform.architecture()[0],
+            "hostname": platform.node(),
+            "user": os.environ.get('USERNAME', 'Usuario'),
+            "boot_time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(boot_time)),
+            "boot_time_ts": boot_time
+        }
+    return dict(_STATIC_OS_INFO)
 
 def get_cpu_info():
     """Obtiene el nombre y especificaciones detalladas del procesador sin lentitud."""
@@ -89,12 +107,13 @@ def invalidate_overview_cache():
 def get_system_overview(force_refresh: bool = False):
     """Genera la auditoría de especificaciones del sistema al instante."""
     now = time.time()
-    if not force_refresh and _OVERVIEW_CACHE["data"] is not None and (now - _OVERVIEW_CACHE["timestamp"] < 1.5):
+    if not force_refresh and _OVERVIEW_CACHE["data"] is not None and (now - _OVERVIEW_CACHE["timestamp"] < 3.5):
         return _OVERVIEW_CACHE["data"]
 
     mem = psutil.virtual_memory()
     swap = psutil.swap_memory()
     admin_status = is_admin()
+    static_os = get_static_os_info()
     
     drives = []
     for part in psutil.disk_partitions(all=False):
@@ -117,8 +136,7 @@ def get_system_overview(force_refresh: bool = False):
         except Exception:
             continue
 
-    boot_time = psutil.boot_time()
-    uptime_seconds = int(time.time() - boot_time)
+    uptime_seconds = int(time.time() - static_os["boot_time_ts"])
     days, remainder = divmod(uptime_seconds, 86400)
     hours, remainder = divmod(remainder, 3600)
     minutes, _ = divmod(remainder, 60)
@@ -137,19 +155,21 @@ def get_system_overview(force_refresh: bool = False):
         except Exception:
             pass
 
+    os_dict = {
+        "system": static_os["system"],
+        "release": static_os["release"],
+        "version": static_os["version"],
+        "architecture": static_os["architecture"],
+        "hostname": static_os["hostname"],
+        "user": static_os["user"],
+        "is_admin": admin_status,
+        "uptime": uptime_str,
+        "boot_time": static_os["boot_time"]
+    }
+
     data = {
         "is_admin": admin_status,
-        "os": {
-            "system": platform.system(),
-            "release": platform.release(),
-            "version": platform.version(),
-            "architecture": platform.architecture()[0],
-            "hostname": platform.node(),
-            "user": os.environ.get('USERNAME', 'Usuario'),
-            "is_admin": admin_status,
-            "uptime": uptime_str,
-            "boot_time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(boot_time))
-        },
+        "os": os_dict,
         "cpu": get_cpu_info(),
         "ram": {
             "total_bytes": mem.total,

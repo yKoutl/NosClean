@@ -11,26 +11,29 @@ echo [1/3] Limpiando carpetas de compilaciones previas...
 if exist build rmdir /s /q build
 if exist dist rmdir /s /q dist
 
-echo [2/3] Generando NosClean.exe con PyInstaller...
+echo [2/3] Generando NosClean.exe ultra-optimizado con PyInstaller...
 python -m PyInstaller ^
     --noconsole ^
     --onefile ^
+    --clean ^
     --icon="NosClean.ico" ^
     --add-data="static;static" ^
     --add-data="NosClean.ico;." ^
+    --add-data="app;app" ^
     --name="NosClean" ^
-    --collect-all="webview" ^
-    --collect-all="pythonnet" ^
-    --collect-all="uvicorn" ^
-    --collect-all="anyio" ^
-    --collect-all="h11" ^
-    --hidden-import="webview" ^
-    --hidden-import="clr" ^
-    --hidden-import="win32com.client" ^
-    --hidden-import="uvicorn.logging" ^
-    --hidden-import="uvicorn.loops.asyncio" ^
-    --hidden-import="uvicorn.protocols.http.h11_impl" ^
-    --hidden-import="uvicorn.lifespan.off" ^
+    --exclude-module numpy ^
+    --exclude-module PIL ^
+    --exclude-module Pillow ^
+    --exclude-module cryptography ^
+    --exclude-module jinja2 ^
+    --exclude-module pygments ^
+    --exclude-module rich ^
+    --exclude-module gunicorn ^
+    --exclude-module mako ^
+    --exclude-module yaml ^
+    --exclude-module watchfiles ^
+    --exclude-module websockets ^
+    --exclude-module wsproto ^
     main.py
 
 if %ERRORLEVEL% NEQ 0 (

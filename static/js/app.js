@@ -24,7 +24,6 @@ async function initApp() {
         console.warn("Aviso al cargar rutas:", e);
     }
     try {
-        loadAdvisor();
         loadOverview();
     } catch (e) {
         console.warn("Aviso al iniciar modulos:", e);
