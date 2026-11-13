@@ -102,14 +102,6 @@ def get_junk_categories() -> List[Dict[str, Any]]:
             "safe": True
         },
         {
-            "id": "win_update_cache",
-            "name": "Descargas de Windows Update",
-            "description": "Instaladores residuales descargados. Nota: Si hay actualizaciones del sistema en cola o pendientes de reiniciar, Windows las retiene por seguridad hasta su instalación.",
-            "paths": [os.path.join(system_root, r"SoftwareDistribution\Download")],
-            "safe": False,
-            "requires_admin": not admin_mode
-        },
-        {
             "id": "recent_history",
             "name": "Historial de Archivos Recientes",
             "description": "Accesos directos a archivos abiertos recientemente.",
@@ -165,7 +157,7 @@ def scan_directory_size(path: str, max_seconds: float = 0.15, max_files: int = 3
     """
     Calcula de forma iterativa y ultrarrápida el tamaño en bytes y cantidad de archivos.
     Incluye un presupuesto máximo de tiempo (max_seconds) y límite de archivos para que,
-    al ejecutarse como Administrador sobre carpetas masivas como Windows Update o Temp,
+    al ejecutarse como Administrador sobre carpetas masivas del sistema o Temp,
     nunca congele el hilo principal ni ralentice la interfaz.
     """
     import time
@@ -450,9 +442,7 @@ def clean_selected_categories(
             total_files_deleted += cat_deleted
             total_skipped += cat_skipped
 
-            if cat_id == "win_update_cache" and cat_freed == 0 and cat_skipped > 0:
-                cat_status = f"Retenidos por Windows ({cat_skipped} archivos protegidos por actualización pendiente del sistema)"
-            elif cat_skipped > 0:
+            if cat_skipped > 0:
                 cat_status = f"Limpieza completada ({cat_skipped} archivos omitidos por estar en uso)"
             else:
                 cat_status = "Limpieza completada con éxito"
