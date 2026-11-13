@@ -294,7 +294,8 @@ def clean_directory_contents(
     _depth: int = 0,
     progress_start: float = None,
     progress_end: float = None,
-    step_label: str = ""
+    step_label: str = "",
+    max_seconds: float = 20.0
 ) -> (int, int, int):
     """Limpia el contenido de un directorio en una sola pasada rápida (O(N)), retirando atributos Read-Only si es necesario."""
     import time
@@ -312,7 +313,7 @@ def clean_directory_contents(
         return 0, 0, 1
 
     total_top = max(1, len(top_entries))
-    deadline = time.monotonic() + 3.0
+    deadline = time.monotonic() + max_seconds
 
     for idx, entry in enumerate(top_entries):
         if progress_start is not None and progress_end is not None:
@@ -449,13 +450,30 @@ def clean_selected_categories(
             paths = [p for p in cat.get("paths", []) if os.path.exists(p)]
             p_count = max(1, len(paths))
             p_span = (c_end - c_start) / p_count
+
+            is_win_update = (cat_id == "win_update_cache" and is_admin())
+            if is_win_update:
+                try:
+                    import subprocess
+                    subprocess.run(["net", "stop", "wuauserv"], capture_output=True, timeout=5)
+                except Exception:
+                    pass
+
             for p_idx, p in enumerate(paths):
                 p_start = c_start + p_idx * p_span
                 p_end = p_start + p_span
-                bf, fd, sc = clean_directory_contents(p, 0, p_start, p_end, step_msg)
+                time_budget = 30.0 if is_win_update else 15.0
+                bf, fd, sc = clean_directory_contents(p, 0, p_start, p_end, step_msg, max_seconds=time_budget)
                 cat_freed += bf
                 cat_deleted += fd
                 cat_skipped += sc
+
+            if is_win_update:
+                try:
+                    import subprocess
+                    subprocess.run(["net", "start", "wuauserv"], capture_output=True, timeout=5)
+                except Exception:
+                    pass
 
             total_freed_bytes += cat_freed
             total_files_deleted += cat_deleted
