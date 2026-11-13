@@ -38,6 +38,9 @@ async function initApp() {
         const cfg = await apiGet('/api/system/config');
         if (cfg) {
             appConfig = Object.assign(appConfig, cfg);
+            if (appConfig.mini_mode) {
+                toggleMiniMode(true, false);
+            }
         }
     } catch (e) {
         console.warn("Aviso al cargar config:", e);
@@ -1236,6 +1239,9 @@ function updateAdminBadgeUI(isAdmin) {
 }
 
 async function checkWelcomeModal() {
+    if (isMiniModeActive || appConfig.mini_mode) {
+        return;
+    }
     let dismissed = (localStorage.getItem('nosclean_welcome_dismissed') === 'true');
     if (!dismissed) {
         try {
@@ -1837,7 +1843,7 @@ function updateMiniWidgetUI(data) {
         if (data.ram.percent_used >= 85) {
             ramCircle.className = "w-16 h-16 rounded-full border-4 border-rose-500 flex items-center justify-center bg-rose-950/40 animate-pulse";
             if (ramVal) ramVal.className = "text-base font-black text-rose-400";
-            if (statusText) statusText.textContent = "⚠️ Memoria RAM alta: optimiza";
+            if (statusText) statusText.textContent = "Aviso: Memoria RAM alta - optimiza";
         } else if (data.ram.percent_used >= 75) {
             ramCircle.className = "w-16 h-16 rounded-full border-4 border-amber-500 flex items-center justify-center bg-amber-950/40";
             if (ramVal) ramVal.className = "text-base font-black text-amber-400";
@@ -1921,7 +1927,7 @@ async function miniOptimize() {
                 setTimeout(() => { if (freedSpan) freedSpan.textContent = ''; }, 6000);
             }
             if (statusText) {
-                statusText.innerHTML = `<span class="text-emerald-300 font-black">✨ ¡Optimizado! -${ramText}</span>`;
+                statusText.innerHTML = `<span class="text-emerald-300 font-black">¡Optimizado! -${ramText}</span>`;
             }
         } else {
             hideRocketLoader();
@@ -1993,4 +1999,13 @@ async function updateConfigOption(key, value) {
     } catch (e) {
         console.error("Error guardando config:", e);
     }
+}
+
+function triggerTestHighRamAlert() {
+    showHighRamAlert(88);
+    showToast('Alerta de memoria RAM activada en la esquina inferior derecha.', 'info');
+}
+
+function triggerTestOptimizationToast() {
+    showToast('Optimización completada: se liberaron 345.8 MB de RAM.', 'success');
 }

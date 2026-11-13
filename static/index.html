@@ -1413,6 +1413,21 @@
                             <span class="text-[11px] text-[#64748B]">Muestra un mensaje confirmando los megabytes de RAM y temporales liberados.</span>
                         </div>
                     </label>
+
+                    <!-- Zona de pruebas interactivas de notificaciones -->
+                    <div class="pt-3 border-t border-slate-200">
+                        <span class="text-xs font-bold text-[#102D25] block mb-2">Comprobar cómo se ven las notificaciones:</span>
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button" onclick="triggerTestHighRamAlert()" class="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 text-xs font-bold flex items-center space-x-1.5 transition-colors cursor-pointer">
+                                <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-amber-600"></i>
+                                <span>Probar Alerta de Memoria RAM</span>
+                            </button>
+                            <button type="button" onclick="triggerTestOptimizationToast()" class="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-900 text-xs font-bold flex items-center space-x-1.5 transition-colors cursor-pointer">
+                                <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i>
+                                <span>Probar Notificación de Optimización</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 

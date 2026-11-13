@@ -555,16 +555,57 @@ if __name__ == "__main__":
         os.makedirs(wv_storage, exist_ok=True)
 
         import webview
+        from ctypes import wintypes
+        u32 = ctypes.windll.user32
+
+        cfg = load_app_config()
+        start_in_mini = bool(cfg.get("mini_mode", False))
+
+        scale = 1.0
+        try:
+            dpi = u32.GetDpiForSystem()
+            if dpi and dpi > 0:
+                scale = dpi / 96.0
+        except Exception:
+            scale = 1.0
+        scale = max(1.0, scale)
+
+        rect = wintypes.RECT()
+        u32.SystemParametersInfoW(0x0030, 0, ctypes.byref(rect), 0)
+
+        mini_w = int(500 * scale)
+        mini_h = int(300 * scale)
+        margin = int(24 * scale)
+        mini_x = max(0, rect.right - mini_w - margin)
+        mini_y = max(0, rect.bottom - mini_h - margin)
+
+        init_w = mini_w if start_in_mini else 1280
+        init_h = mini_h if start_in_mini else 820
+        init_x = mini_x if start_in_mini else None
+        init_y = mini_y if start_in_mini else None
+        init_maximized = not start_in_mini
+        init_on_top = bool(cfg.get("always_on_top_mini", True)) if start_in_mini else False
+
         window_title = 'NosClean (Administrador)' if is_admin() else 'NosClean'
         _main_window = webview.create_window(
             title=window_title,
             url=f'http://127.0.0.1:{app_port}',
-            width=1280,
-            height=820,
+            x=init_x,
+            y=init_y,
+            width=init_w,
+            height=init_h,
             min_size=(320, 140),
-            maximized=True
+            maximized=init_maximized,
+            on_top=init_on_top
         )
+
+        def on_gui_ready():
+            if start_in_mini:
+                time.sleep(0.18)
+                set_mini_window_style(True)
+
         webview.start(
+            on_gui_ready,
             icon=ico_path if os.path.exists(ico_path) else None,
             private_mode=False,
             storage_path=wv_storage
