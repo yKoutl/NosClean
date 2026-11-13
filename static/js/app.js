@@ -1957,6 +1957,10 @@ function checkHighRamAlert(ramPercent) {
 }
 
 function showHighRamAlert(ramPercent) {
+    if (isMiniModeActive) {
+        showMiniToastBadge(`Aviso: RAM al ${ramPercent}% - optimiza`);
+        return;
+    }
     const banner = document.getElementById('high-ram-banner');
     const valEl = document.getElementById('high-ram-banner-val');
     if (valEl) valEl.textContent = `${ramPercent}%`;
@@ -1993,6 +1997,12 @@ function loadSettingsUI() {
 
 async function updateConfigOption(key, value) {
     appConfig[key] = value;
+    if (key === 'high_ram_threshold' || key === 'notify_high_ram') {
+        lastHighRamAlertTime = 0;
+        if (systemOverviewData && systemOverviewData.ram) {
+            checkHighRamAlert(systemOverviewData.ram.percent_used);
+        }
+    }
     try {
         await apiPost('/api/system/config', { [key]: value });
         showToast('Preferencia guardada correctamente', 'success');
