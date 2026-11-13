@@ -104,9 +104,9 @@ def get_junk_categories() -> List[Dict[str, Any]]:
         {
             "id": "win_update_cache",
             "name": "Descargas de Windows Update",
-            "description": "Instaladores residuales de actualizaciones ya descargadas." + (" (Requiere ejecutar como Administrador para eliminar)" if not admin_mode else ""),
+            "description": "Instaladores residuales descargados. Nota: Si hay actualizaciones del sistema en cola o pendientes de reiniciar, Windows las retiene por seguridad hasta su instalación.",
             "paths": [os.path.join(system_root, r"SoftwareDistribution\Download")],
-            "safe": True,
+            "safe": False,
             "requires_admin": not admin_mode
         },
         {
@@ -343,10 +343,13 @@ def clean_directory_contents(
                 except (PermissionError, OSError):
                     skipped_count += 1
             elif entry.is_dir(follow_symlinks=False):
-                for root_dir, dirs, files in os.walk(entry.path, topdown=False):
+                # Usar topdown=True para procesar y liberar archivos de inmediato sin bloquearse indexando arboles masivos
+                for root_dir, dirs, files in os.walk(entry.path, topdown=True):
                     if time.monotonic() > deadline:
                         break
                     for fname in files:
+                        if time.monotonic() > deadline:
+                            break
                         fpath = os.path.join(root_dir, fname)
                         try:
                             fsize = os.path.getsize(fpath)
@@ -362,31 +365,14 @@ def clean_directory_contents(
                             files_deleted += 1
                         except (PermissionError, OSError):
                             skipped_count += 1
-                    for dname in dirs:
+                    for dname in list(dirs):
                         dpath = os.path.join(root_dir, dname)
                         try:
-                            try:
-                                os.rmdir(dpath)
-                            except PermissionError as e:
-                                if getattr(e, 'winerror', None) == 5:
-                                    os.chmod(dpath, stat.S_IWRITE)
-                                    os.rmdir(dpath)
-                                else:
-                                    raise
+                            os.rmdir(dpath)
                         except (PermissionError, OSError):
                             pass
                 try:
-                    try:
-                        os.rmdir(entry.path)
-                    except PermissionError as e:
-                        if getattr(e, 'winerror', None) == 5:
-                            os.chmod(entry.path, stat.S_IWRITE)
-                            os.rmdir(entry.path)
-                        else:
-                            raise
-                    except PermissionError:
-                        os.chmod(entry.path, stat.S_IWRITE)
-                        os.rmdir(entry.path)
+                    os.rmdir(entry.path)
                 except (PermissionError, OSError):
                     pass
         except Exception:
@@ -451,40 +437,33 @@ def clean_selected_categories(
             p_count = max(1, len(paths))
             p_span = (c_end - c_start) / p_count
 
-            is_win_update = (cat_id == "win_update_cache" and is_admin())
-            if is_win_update:
-                try:
-                    import subprocess
-                    subprocess.run(["net", "stop", "wuauserv"], capture_output=True, timeout=5)
-                except Exception:
-                    pass
-
             for p_idx, p in enumerate(paths):
                 p_start = c_start + p_idx * p_span
                 p_end = p_start + p_span
-                time_budget = 30.0 if is_win_update else 15.0
+                time_budget = 20.0
                 bf, fd, sc = clean_directory_contents(p, 0, p_start, p_end, step_msg, max_seconds=time_budget)
                 cat_freed += bf
                 cat_deleted += fd
                 cat_skipped += sc
 
-            if is_win_update:
-                try:
-                    import subprocess
-                    subprocess.run(["net", "start", "wuauserv"], capture_output=True, timeout=5)
-                except Exception:
-                    pass
-
             total_freed_bytes += cat_freed
             total_files_deleted += cat_deleted
             total_skipped += cat_skipped
+
+            if cat_id == "win_update_cache" and cat_freed == 0 and cat_skipped > 0:
+                cat_status = f"Retenidos por Windows ({cat_skipped} archivos protegidos por actualización pendiente del sistema)"
+            elif cat_skipped > 0:
+                cat_status = f"Limpieza completada ({cat_skipped} archivos omitidos por estar en uso)"
+            else:
+                cat_status = "Limpieza completada con éxito"
+
             details.append({
                 "id": cat_id,
                 "name": cat["name"],
                 "freed_formatted": format_size(cat_freed),
                 "files_deleted": cat_deleted,
                 "skipped": cat_skipped,
-                "status": f"Limpieza completada ({cat_skipped} omitidos en uso)" if cat_skipped > 0 else "Limpieza completa"
+                "status": cat_status
             })
 
     invalidate_junk_cache()

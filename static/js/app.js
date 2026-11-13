@@ -542,18 +542,22 @@ function renderJunkCategories(categories) {
         item.className = "flex items-center justify-between p-3.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 transition-colors shadow-sm";
         
         const hasItems = cat.size_bytes > 0 || cat.file_count > 0;
-        const checked = hasItems ? 'checked' : 'disabled';
+        const isSafe = cat.safe !== false;
+        const checked = (hasItems && isSafe) ? 'checked' : (hasItems ? '' : 'disabled');
         const opacity = hasItems ? 'opacity-100' : 'opacity-40';
 
-        const adminBadge = cat.requires_admin 
-            ? '<button type="button" onclick="openAdminModal()" title="Haz clic para ejecutar como Administrador" class="ml-1.5 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300 transition-colors cursor-pointer">Requiere Admin · Activar</button>' 
-            : '';
+        let badges = '';
+        if (cat.requires_admin) {
+            badges += '<button type="button" onclick="openAdminModal()" title="Haz clic para ejecutar como Administrador" class="ml-1.5 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300 transition-colors cursor-pointer">Requiere Admin · Activar</button>';
+        } else if (cat.safe === false) {
+            badges += '<span class="ml-1.5 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200" title="Categoría opcional: Windows retiene paquetes activos hasta su instalación">Opcional</span>';
+        }
 
         item.innerHTML = `
             <div class="flex items-center space-x-3 ${opacity}">
                 <input type="checkbox" id="chk-junk-${cat.id}" data-id="${cat.id}" ${checked} class="w-4 h-4 text-[#087A45] rounded border-slate-300 focus:ring-[#087A45] cursor-pointer">
                 <div>
-                    <h4 class="text-sm font-semibold text-[#102D25] flex items-center">${cat.name}${adminBadge}</h4>
+                    <h4 class="text-sm font-semibold text-[#102D25] flex items-center">${cat.name}${badges}</h4>
                     <p class="text-xs text-[#64748B]">${cat.description}</p>
                 </div>
             </div>
@@ -606,9 +610,20 @@ async function executeJunkClean(selectedCategories) {
     if (btn) btn.disabled = false;
 
     if (res && res.success) {
-        const detailMsg = res.total_skipped > 0
-            ? `Se liberaron ${res.freed_formatted} (${res.total_files_deleted.toLocaleString()} archivos eliminados). ${res.total_skipped.toLocaleString()} archivos en uso fueron protegidos.`
-            : `Se liberaron ${res.freed_formatted} (${res.total_files_deleted.toLocaleString()} archivos basura eliminados).`;
+        let detailMsg = '';
+        let titleMsg = `¡Espacio Liberado: ${res.freed_formatted}!`;
+
+        if (res.freed_bytes > 0) {
+            detailMsg = res.total_skipped > 0
+                ? `Se liberaron ${res.freed_formatted} (${res.total_files_deleted.toLocaleString()} archivos eliminados). ${res.total_skipped.toLocaleString()} archivos en uso o protegidos fueron preservados.`
+                : `Se liberaron ${res.freed_formatted} (${res.total_files_deleted.toLocaleString()} archivos basura eliminados).`;
+        } else if (res.total_skipped > 0) {
+            titleMsg = 'Archivos Protegidos por el Sistema';
+            detailMsg = `Los ${res.total_skipped.toLocaleString()} archivos están bloqueados por Windows (actualizaciones pendientes del sistema). Puedes usar "Liberador Win" o reiniciar para aplicarlas.`;
+        } else {
+            titleMsg = 'Sistema Limpio';
+            detailMsg = 'El sistema ya se encontraba limpio. No se requirió eliminar archivos.';
+        }
 
         // Refrescar métricas en paralelo mientras el cohete llega al 100%
         Promise.all([
@@ -618,12 +633,12 @@ async function executeJunkClean(selectedCategories) {
         ]).catch(() => {});
 
         await finishRocketLoader({
-            stepText: '¡Limpieza profunda finalizada con éxito!',
-            resultTitle: `¡Espacio Liberado: ${res.freed_formatted}!`,
+            stepText: '¡Proceso finalizado con éxito!',
+            resultTitle: titleMsg,
             resultDetail: detailMsg,
             holdMs: 1500
         });
-        showToast(detailMsg, 'success');
+        showToast(detailMsg, res.freed_bytes > 0 ? 'success' : 'info');
     } else {
         hideRocketLoader();
     }
@@ -1862,11 +1877,7 @@ function showMiniToastBadge(message) {
     const badgeText = document.getElementById('mini-toast-badge-text');
     if (!badge || !badgeText) return;
 
-    let cleanMsg = message.trim();
-    if (!cleanMsg.toLowerCase().includes('liberado') && !cleanMsg.toLowerCase().includes('optimizado')) {
-        cleanMsg = `¡${cleanMsg} de RAM liberados!`;
-    }
-
+    let cleanMsg = (message || '').trim();
     badgeText.textContent = cleanMsg;
     badge.classList.remove('hidden', 'mini-toast-animated-exit');
     badge.classList.add('mini-toast-animated-enter');
