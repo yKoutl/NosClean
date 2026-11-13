@@ -2003,7 +2003,6 @@ async function updateConfigOption(key, value) {
 
 function triggerTestHighRamAlert() {
     showHighRamAlert(88);
-    showToast('Alerta de memoria RAM activada en la esquina inferior derecha.', 'info');
 }
 
 function triggerTestOptimizationToast() {
