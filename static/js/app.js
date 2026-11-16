@@ -1964,6 +1964,11 @@ function checkHighRamAlert(ramPercent) {
     if (ramPercent >= threshold && (now - lastHighRamAlertTime > 4 * 60 * 1000)) {
         lastHighRamAlertTime = now;
         showHighRamAlert(ramPercent);
+        // Notificación nativa en el escritorio de Windows (visible aun con la app minimizada)
+        apiPost('/api/system/notify', {
+            title: 'NosClean - Alto Consumo de RAM',
+            message: `Tu equipo está consumiendo el ${ramPercent}% de memoria. Abre NosClean para optimizar.`
+        }).catch(() => {});
     }
 }
 
@@ -2024,6 +2029,11 @@ async function updateConfigOption(key, value) {
 
 function triggerTestHighRamAlert() {
     showHighRamAlert(88);
+    // Disparar además la notificación Toast nativa del sistema operativo Windows
+    apiPost('/api/system/notify', {
+        title: 'NosClean - Prueba de Notificación Nativa',
+        message: 'Tu equipo está al 88% de memoria RAM. Abre NosClean para optimizar.'
+    }).catch(() => {});
 }
 
 function triggerTestOptimizationToast() {

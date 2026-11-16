@@ -255,5 +255,42 @@ def restart_as_admin():
     except Exception as e:
         return False, f"No se pudo iniciar como Administrador: {str(e)}", {"error": str(e)}
 
+def send_native_windows_notification(title: str, message: str) -> bool:
+    """
+    Envía una notificación Toast nativa en el escritorio de Windows 10/11.
+    Se ejecuta de forma completamente silenciosa (CREATE_NO_WINDOW) para no abrir consolas.
+    """
+    import sys
+    if sys.platform != "win32":
+        return False
+
+    safe_title = title.replace("'", "''")
+    safe_msg = message.replace("'", "''")
+
+    ps_code = f"""
+    [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
+    $template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02)
+    $xml = [xml]$template.GetXml()
+    $nodes = $xml.GetElementsByTagName('text')
+    $nodes.Item(0).InnerText = '{safe_title}'
+    $nodes.Item(1).InnerText = '{safe_msg}'
+    $doc = New-Object Windows.Data.Xml.Dom.XmlDocument
+    $doc.LoadXml($xml.OuterXml)
+    $toast = [Windows.UI.Notifications.ToastNotification]::new($doc)
+    [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('NosClean').Show($toast)
+    """
+
+    try:
+        subprocess.run(
+            ["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", ps_code],
+            capture_output=True,
+            timeout=4,
+            creationflags=0x08000000
+        )
+        return True
+    except Exception:
+        return False
+
+
 
 

@@ -21,7 +21,7 @@ from app.storage import scan_heavy_files, COMMON_PATHS
 from app.software import get_installed_programs, get_startup_applications, launch_uninstaller
 from app.organizer import scan_target_folder, organize_files
 from app.advisor import generate_pc_advice
-from app.utils import open_in_explorer, recycle_path, open_windows_app, create_windows_shortcut, restart_as_admin, is_admin
+from app.utils import open_in_explorer, recycle_path, open_windows_app, create_windows_shortcut, restart_as_admin, is_admin, send_native_windows_notification
 
 app = FastAPI(
     title="NosClean",
@@ -140,6 +140,50 @@ def api_update_config(req: ConfigUpdateRequest):
         cfg["always_on_top_mini"] = req.always_on_top_mini
     save_app_config(cfg)
     return {"success": True, "config": cfg}
+
+class NativeNotificationRequest(BaseModel):
+    title: str = "NosClean"
+    message: str
+
+@app.post("/api/system/notify")
+def api_send_native_notification(req: NativeNotificationRequest):
+    cfg = load_app_config()
+    if cfg.get("notify_high_ram", True):
+        threading.Thread(
+            target=send_native_windows_notification,
+            args=(req.title, req.message),
+            daemon=True
+        ).start()
+    return {"success": True}
+
+_last_bg_ram_notification_time = 0.0
+
+def _background_ram_monitor_loop():
+    """
+    Monitorea el consumo de memoria RAM de forma ligera en segundo plano cada 20 segundos.
+    Si supera el umbral configurado por el usuario, emite una notificación nativa de Windows
+    en el escritorio (con cooldown para no saturar al usuario).
+    """
+    global _last_bg_ram_notification_time
+    import psutil
+    time.sleep(12)
+    while True:
+        try:
+            cfg = load_app_config()
+            if cfg.get("notify_high_ram", True):
+                threshold = int(cfg.get("high_ram_threshold", 80))
+                mem = psutil.virtual_memory()
+                used_pct = round(mem.percent, 1)
+                now = time.time()
+                # Cooldown de 4 minutos entre notificaciones
+                if used_pct >= threshold and (now - _last_bg_ram_notification_time > 240):
+                    _last_bg_ram_notification_time = now
+                    title = "NosClean - Alto Consumo de RAM"
+                    msg = f"Tu equipo está al {used_pct}% de memoria. Abre NosClean para optimizarlo."
+                    send_native_windows_notification(title, msg)
+        except Exception:
+            pass
+        time.sleep(20)
 
 def get_nosclean_hwnd():
     """Obtiene el HWND real de la ventana de NosClean con múltiples métodos a prueba de fallos."""
@@ -535,6 +579,10 @@ if __name__ == "__main__":
 
     server_thread = threading.Thread(target=run_server, daemon=True)
     server_thread.start()
+
+    # Iniciar monitor de RAM en segundo plano para notificaciones nativas en el escritorio
+    monitor_thread = threading.Thread(target=_background_ram_monitor_loop, daemon=True)
+    monitor_thread.start()
 
     # Esperar hasta que uvicorn esté listo para responder (aprox 150 ms)
     for _ in range(60):
