@@ -79,7 +79,8 @@ DEFAULT_CONFIG = {
     "notify_high_ram": True,
     "high_ram_threshold": 80,
     "notify_optimization": True,
-    "always_on_top_mini": True
+    "always_on_top_mini": True,
+    "close_to_background": True
 }
 
 def _get_config_path() -> str:
@@ -120,6 +121,7 @@ class ConfigUpdateRequest(BaseModel):
     high_ram_threshold: Optional[int] = None
     notify_optimization: Optional[bool] = None
     always_on_top_mini: Optional[bool] = None
+    close_to_background: Optional[bool] = None
 
 @app.post("/api/system/config")
 def api_update_config(req: ConfigUpdateRequest):
@@ -138,8 +140,21 @@ def api_update_config(req: ConfigUpdateRequest):
         cfg["notify_optimization"] = req.notify_optimization
     if req.always_on_top_mini is not None:
         cfg["always_on_top_mini"] = req.always_on_top_mini
+    if req.close_to_background is not None:
+        cfg["close_to_background"] = req.close_to_background
     save_app_config(cfg)
     return {"success": True, "config": cfg}
+
+@app.post("/api/system/show-window")
+def api_show_window():
+    global _main_window
+    if _main_window:
+        try:
+            _main_window.show()
+            _main_window.restore()
+        except Exception:
+            pass
+    return {"success": True}
 
 class NativeNotificationRequest(BaseModel):
     title: str = "NosClean"
@@ -534,9 +549,23 @@ if __name__ == "__main__":
                     continue
         return 8000
 
-    # Limpieza automática de instancias previas huérfanas para evitar puertos y cachés bloqueadas
+    # Comprobar si ya existe una instancia viva en segundo plano y pedirle que muestre la ventana
     current_pid = os.getpid()
     if "--elevated-restart" not in sys.argv:
+        for port_candidate in [8000, 8008, 8088, 8888]:
+            try:
+                import urllib.request
+                req = urllib.request.Request(
+                    f"http://127.0.0.1:{port_candidate}/api/system/show-window",
+                    data=b"{}",
+                    headers={"Content-Type": "application/json"}
+                )
+                with urllib.request.urlopen(req, timeout=0.35) as resp:
+                    if resp.status == 200:
+                        sys.exit(0)
+            except Exception:
+                pass
+
         try:
             import psutil
             for p in psutil.process_iter(['pid', 'name']):
@@ -646,6 +675,18 @@ if __name__ == "__main__":
             maximized=init_maximized,
             on_top=init_on_top
         )
+
+        def on_window_closing():
+            app_cfg = load_app_config()
+            if app_cfg.get("close_to_background", True):
+                try:
+                    _main_window.hide()
+                    return False  # Cancela el cierre destructivo y mantiene NosClean vigilando en segundo plano
+                except Exception:
+                    return True
+            return True
+
+        _main_window.events.closing += on_window_closing
 
         def on_gui_ready():
             if start_in_mini:

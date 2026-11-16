@@ -1414,6 +1414,14 @@
                         </div>
                     </label>
 
+                    <label class="flex items-start space-x-3 p-3 rounded-xl bg-[#F4F7F5] border border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors">
+                        <input type="checkbox" id="cfg-close-to-background" onchange="updateConfigOption('close_to_background', this.checked)" class="mt-0.5 rounded text-[#087A45] focus:ring-[#16B84E]">
+                        <div>
+                            <span class="text-xs font-bold text-[#102D25] block">Vigilar en segundo plano al cerrar con la X (Avisos automáticos de la nada)</span>
+                            <span class="text-[11px] text-[#64748B]">Al pulsar la X, la ventana se oculta completamente sin dejar botones molestos en la barra de tareas. NosClean vigilará en silencio consumiendo 0% de CPU y la notificación saldrá sola si la memoria es crítica.</span>
+                        </div>
+                    </label>
+
                     <!-- Zona de pruebas interactivas de notificaciones -->
                     <div class="pt-3 border-t border-slate-200">
                         <span class="text-xs font-bold text-[#102D25] block mb-2">Comprobar cómo se ven las notificaciones:</span>

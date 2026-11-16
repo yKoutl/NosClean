@@ -2003,12 +2003,14 @@ function loadSettingsUI() {
     const notifyHighRamCb = document.getElementById('cfg-notify-high-ram');
     const thresholdSelect = document.getElementById('cfg-ram-threshold');
     const notifyOptCb = document.getElementById('cfg-notify-optimization');
+    const closeToBgCb = document.getElementById('cfg-close-to-background');
 
     if (alwaysOnTopCb) alwaysOnTopCb.checked = Boolean(appConfig.always_on_top_mini);
     if (startMiniCb) startMiniCb.checked = Boolean(appConfig.mini_mode);
     if (notifyHighRamCb) notifyHighRamCb.checked = Boolean(appConfig.notify_high_ram);
     if (thresholdSelect) thresholdSelect.value = String(appConfig.high_ram_threshold || 80);
     if (notifyOptCb) notifyOptCb.checked = Boolean(appConfig.notify_optimization);
+    if (closeToBgCb) closeToBgCb.checked = appConfig.close_to_background !== false;
 }
 
 async function updateConfigOption(key, value) {
