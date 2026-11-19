@@ -36,6 +36,11 @@ Thumbs.db
 .nosclean_profile/
 NosClean.exe
 
+# Media
+*.mp4
+scripts/bin/
+scripts/audio/
+
 # IDEs
 .vscode/
 .idea/
